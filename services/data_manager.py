@@ -1,13 +1,15 @@
-import os
+from pathlib import Path
 import pandas as pd
-file_path = "data/seoul_library_english.csv"
-df = pd.read_csv(file_path)
+BASE_DIR = Path(__file__).resolve().parent.parent
+FILE_PATH = BASE_DIR / "data" / "seoul_library_english.csv"
 
-df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
-df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
-
-columns_to_check = ['Library_Name', 'District_Name', 'Latitude', 'Longitude']
-df_cleaned = df.dropna(subset=columns_to_check)
-
-output_path = os.path.join('data', 'seoul_library_cleaned.csv')
-df_cleaned.to_csv(output_path, index=False, encoding='utf-8-sig')
+def get_cleaned_library_data():
+    df = pd.read_csv(FILE_PATH)
+    
+    # Update columns directly instead of creating '_cleaned' versions
+    df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
+    df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
+    columns_to_check = ['Library_Name', 'District_Name', 'Latitude', 'Longitude']
+    
+    df_cleaned = df.dropna(subset=columns_to_check)
+    return df_cleaned

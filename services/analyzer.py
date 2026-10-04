@@ -1,15 +1,8 @@
-from pathlib import Path
-import pandas as pd
-BASE_DIR = Path(__file__).resolve().parent.parent
-FILE_PATH = BASE_DIR / "data" / "seoul_library_english.csv"
+def get_total_libraries(df):
+    return len(df)
 
-def get_cleaned_library_data():
-    df = pd.read_csv(FILE_PATH)
-    
-    # Update columns directly instead of creating '_cleaned' versions
-    df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
-    df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
-    columns_to_check = ['Library_Name', 'District_Name', 'Latitude', 'Longitude']
-    
-    df_cleaned = df.dropna(subset=columns_to_check)
-    return df_cleaned
+def get_total_districts(df):
+    return df['District_Name'].nunique()
+
+def get_libraries_per_district(df):
+    return df.groupby("District_Name").size().sort_values(ascending=False)

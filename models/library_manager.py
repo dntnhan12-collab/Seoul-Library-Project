@@ -3,6 +3,7 @@ from models.library import Library
 class LibraryManager:
     def __init__(self, libraries):
         self.libraries = libraries
+
     @classmethod
     def from_dataframe(cls, df):
         libraries = []
@@ -17,9 +18,13 @@ class LibraryManager:
         return self.libraries
 
     def filter_by_district(self, district):
+        if not district:
+            return self.libraries
+        
         return [
             library for library in self.libraries
             if library.district == district
+        
         ]
 
     def search(self, keyword):

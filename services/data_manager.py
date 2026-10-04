@@ -1,6 +1,6 @@
 from pathlib import Path
 import pandas as pd
-BASE_DIR = Path(__file__).resolve().parent.p
+BASE_DIR = Path(__file__).resolve().parent.parent
 FILE_PATH = BASE_DIR / "data" / "seoul_library_english.csv"
 
 def get_cleaned_library_data():

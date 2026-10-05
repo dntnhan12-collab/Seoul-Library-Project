@@ -18,13 +18,12 @@ class LibraryManager:
         return self.libraries
 
     def filter_by_district(self, district):
-        if not district:
-            return self.libraries
+        if district == "All districts":
+            return self.get_all()
         
         return [
             library for library in self.libraries
             if library.district == district
-        
         ]
 
     def search(self, keyword):

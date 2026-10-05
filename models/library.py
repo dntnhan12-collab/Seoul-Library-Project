@@ -13,13 +13,14 @@ class Library:
         self.longitude = longitude
 
     def matches_keyword(self, keyword):
-        keyword = keyword.lower()
-
-        return (
-            keyword in str(self.name).lower()
-            or keyword in str(self.district).lower()
-            or keyword in str(self.address).lower()
+        keyword = str(keyword).strip().lower()
+        searchable_text = (self.name, self.district, self.address)
+        
+        return any(
+            keyword in str(value).lower()
+            for value in searchable_text
         )
+        
     @classmethod
     def from_row(cls, row):
         return cls(

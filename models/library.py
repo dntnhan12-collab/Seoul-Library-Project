@@ -35,3 +35,13 @@ class Library:
             latitude=row["Latitude"],
             longitude=row["Longitude"]
     )
+
+    def details(self):
+        return {
+            "District": self.district,
+            "Address": self.address,
+            "Phone": self.phone,
+            "Operating Hours": str(self.operating_hours).replace("~", " - "),
+            "Closed Days": self.closed_days,
+            "Website": self.website,
+        }

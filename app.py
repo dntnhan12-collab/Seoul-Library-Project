@@ -1,3 +1,4 @@
+<<<<<<< ours
 import streamlit as st
 st.set_page_config(page_title="Seoul Public Library Explorer", page_icon="📚", layout="wide")
 st.title("Seoul Public Library Explorer")
@@ -38,3 +39,11 @@ st.divider()
 st.subheader("Libraries by District")
 
 st.info("The library distribution by district will be displayed here.")
+=======
+import altair as alt
+import folium
+import streamlit as st
+from folium.plugins import LocateControl
+from streamlit_folium import st_folium
+from models.library import Library
+>>>>>>> theirs

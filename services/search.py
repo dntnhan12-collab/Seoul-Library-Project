@@ -1,10 +1,14 @@
 import pandas as pd
-
-def search_library(df: pd.DataFrame, library_name: str) -> pd.DataFrame:
+def search_library(df, library_name):
     query = " ".join(str(library_name or "").split()).casefold()
     if not query:
         return df.iloc[0:0].copy()
-    names = df["Library_Name"].fillna("").astype(str).map(
-        lambda name: " ".join(name.split()).casefold()
+    names = (
+        df["Library_Name"]
+        .fillna("")
+        .astype(str)
+        .str.split()
+        .str.join(" ")
+        .str.casefold()
     )
-    return df.loc[names == query].copy()
+    return df[names.str.startswith(query)].copy()

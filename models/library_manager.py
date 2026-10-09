@@ -11,24 +11,9 @@ class LibraryManager:
         for _, row in df.iterrows():
                 library = Library.from_row(row)
                 libraries.append(library)
-    
+
         return cls(libraries)
 
     def get_all(self):
         return self.libraries
-
-    def filter_by_district(self, district):
-        if district == "All districts":
-            return self.get_all()
-        
-        return [
-            library for library in self.libraries
-            if library.district == district
-        ]
-
-    def search(self, keyword):
-        return [
-            library for library in self.libraries
-            if library.matches_keyword(keyword)
-        ]
     

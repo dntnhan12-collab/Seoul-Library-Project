@@ -1,3 +1,6 @@
+import math
+from html import escape
+from pathlib import Path
 import altair as alt
 import folium
 import streamlit as st
@@ -8,231 +11,185 @@ from services.data_manager import get_cleaned_library_data
 from services.analyzer import (get_total_libraries,get_total_districts,get_libraries_per_district,)
 
 st.set_page_config(page_title="Seoul Public Library Explorer",page_icon="📚",layout="wide",)
+ALL = "All Districts"
+
+def heading(text):
+    st.markdown(f'<div class="section-heading">{text}</div>',unsafe_allow_html=True,)
 
 def load_css():
-    css_path = "styles/style.css"
-    try:
-        with open(css_path, encoding="utf-8") as css_file:
-            st.markdown(f"<style>{css_file.read()}</style>",unsafe_allow_html=True,)
-    except FileNotFoundError:
+    path = Path(__file__).resolve().parent / "styles" / "style.css"
+    if path.exists():
+        css = path.read_text(encoding="utf-8")
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    else:
         st.warning("CSS file not found: styles/style.css")
-load_css()
 
-@st.cache_data
+@st.cache_data(show_spinner="Loading library data...")
 def load_library_data():
     df = get_cleaned_library_data()
-    manager = LibraryManager.from_dataframe(df)
-    libraries = manager.get_all()
+    libraries = LibraryManager.from_dataframe(df).get_all()
     return df, libraries
 
-defaults ={
-    "applied_search": "",
-    "applied_district": "All Districts",
-    "selected_library": None,
-    "search_input": "",
-    "district_input": "All Districts",}
+def init_state():
+    defaults = {"applied_search": "","applied_district": ALL,"selected_library": None,"search_input": "","district_input": ALL,"filter_version": 0,}
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
-for key, value in defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = value
+def apply_search(reset=False):
+    s = st.session_state
+    if reset:
+        s.search_input, s.district_input = "", ALL
+    s.applied_search = s.search_input.strip()
+    s.applied_district = s.district_input
+    s.selected_library = None
+    s.filter_version += 1
 
-def find_libraries():
-    st.session_state.applied_search =(st.session_state.search_input.strip())
-    st.session_state.applied_district =(st.session_state.district_input)
-    st.session_state.selected_library = None
-
-def reset_libraries():
-    st.session_state.search_input = ""
-    st.session_state.district_input = "All Districts"
-    st.session_state.applied_search = ""
-    st.session_state.applied_district = "All Districts"
-    st.session_state.selected_library = None
-
-def show_title():
-    st.markdown("""
-        <div class="page-header">
-            <h1>Seoul Public Library</h1>
-        </div>
-        """,
-        unsafe_allow_html=True,)
-
-def show_search_area(districts):
+def show_search(districts):
     with st.container(border=True):
-        st.markdown('<div class="section-heading">🔎 &nbsp; Library Search</div>',unsafe_allow_html=True,)
+        heading("🔎 &nbsp; Library Search")
         st.text_input("Search by name",key="search_input",placeholder="Enter library name...",)
-        district_options =["All Districts"] + sorted(districts)
-        st.selectbox("District",options=district_options,key="district_input",)
-        col_find, col_reset = st.columns(2)
-        with col_find:
-            st.button("⌕ Find",key="find_button",use_container_width=True,on_click=find_libraries,type="primary",)
+        st.selectbox("District",[ALL] + sorted(districts),key="district_input",)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("⌕ Find",key="find_button",use_container_width=True,on_click=apply_search,type="primary",)
+        with col2:
+            st.button("↻ Reset",key="reset_button",use_container_width=True,on_click=apply_search,kwargs={"reset": True},)
 
-        with col_reset:
-            st.button("↻ Reset",key="reset_button",use_container_width=True,on_click=reset_libraries,)
 
 def filter_libraries(libraries, name, district):
-    name = str(name).strip().lower()
-    district = str(district).strip()
-    results = []
-    for library in libraries:
-        library_name = str(getattr(library, "name", "")).strip().lower()
-        library_district = str(getattr(library, "district", "")).strip()
-        if (district != "All Districts" and library_district != district):
-            continue
-        if name and name not in library_name:
-            continue
-        results.append(library)
-    return results
-def show_library_information(library):
+    name = str(name).strip().casefold()
+    return [
+        lib for lib in libraries
+        if (district == ALL or str(getattr(lib, "district", "") or "").strip() == district)
+        and name in str(getattr(lib, "name", "") or "").strip().casefold()]
+
+def valid_coords(lat, lon):
+    try:
+        lat, lon = float(lat), float(lon)
+        if (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180):
+            return lat, lon
+    except (TypeError, ValueError):
+        pass
+    return None
+
+def show_info(library):
     if library is None:
         return
     with st.container(border=True):
-        st.markdown('<div class="section-heading">📖 &nbsp; Library Information</div>',unsafe_allow_html=True,)
-        st.markdown(f"Name: {getattr(library, 'name', 'N/A')}")
-        st.markdown(f"District: {getattr(library, 'district', 'N/A')}")
-        st.markdown(f"Address: {getattr(library, 'address', 'N/A')}")
-        st.markdown(f"Phone: {getattr(library, 'phone', 'N/A')}")
+        heading("📖 &nbsp; Library Information")
+        fields = (("Name", "name"),("District", "district"),("Address", "address"),("Phone", "phone"),)
+        for label, attr in fields:
+            value = getattr(library, attr, None) or "N/A"
+            st.write(f"{label}: {value}")
         website = getattr(library, "website", None)
-        if website:
-            st.markdown(f"Website: [{website}]({website})")
+        if website and str(website).startswith(("http://", "https://")):
+            st.write("Website:")
+            st.link_button("Open library website", str(website))
         else:
-            st.markdown("Website: N/A")
-        hours = str(getattr(library, "operating_hours", "N/A")).replace("~", " - ")
-        st.markdown(f"Operating Hours: {hours}")
-        st.markdown(f"Closed Days: {getattr(library, 'closed_days', 'N/A')}")
-        st.markdown(f"Library Type: {getattr(library, 'library_type', 'N/A')}")
+            st.write("Website: N/A")
+        hours = str(getattr(library, "operating_hours", None) or "N/A").replace("~", " - ")
+        st.write(f"Operating Hours: {hours}")
+        st.write(f"Closed Days: "f"{getattr(library, 'closed_days', None) or 'N/A'}")
+        st.write(f"Library Type: "f"{getattr(library, 'library_type', None) or 'N/A'}")
+
+def show_map(libraries, map_key="library_map"):
+    with st.container(border=True):
+        heading("♧ &nbsp; Library Map")
+        st.caption("Click a marker to view library information.")
+        m = folium.Map(location=[37.5665, 126.9780],zoom_start=11,tiles="OpenStreetMap",control_scale=True,zoom_control=True,prefer_canvas=True,)
+        LocateControl(auto_start=False,strings={"title": "Show my location","popup": "You are here",},).add_to(m)
+        markers = folium.FeatureGroup(name="Libraries")
+        for lib in libraries:
+            coords = valid_coords(getattr(lib, "latitude", None),getattr(lib, "longitude", None),)
+            if coords is None:
+                continue
+            name = str(getattr(lib, "name", None) or "Library")
+            district = str(getattr(lib, "district", None) or "N/A")
+            folium.Marker(
+                location=coords,
+                tooltip=name,
+                popup=folium.Popup(f"<b>{escape(name)}</b><br>{escape(district)}",max_width=250,),
+                icon=folium.Icon(color="darkred",icon="book",prefix="fa",),
+            ).add_to(markers)
+        return st_folium(m,key=map_key,height=390,width=None,feature_group_to_add=markers,returned_objects=["last_object_clicked"],)
 
 def get_clicked_library(libraries, map_data):
-    if not map_data:
+    clicked = (map_data or {}).get("last_object_clicked")
+    if not isinstance(clicked, dict):
         return None
-    clicked = map_data.get("last_object_clicked")
-    if not clicked:
+    position = valid_coords(clicked.get("lat"),clicked.get("lng"),)
+    if position is None:
         return None
-    lat = clicked.get("lat")
-    lng = clicked.get("lng")
-    if lat is None or lng is None:
-        return None
-    try:
-        lat = float(lat)
-        lng = float(lng)
-    except (ValueError, TypeError):
-        return None
-    for library in libraries:
-        latitude = getattr(library, "latitude", None)
-        longitude = getattr(library, "longitude", None)
-        if latitude is None or longitude is None:
-            continue
-        try:
-            latitude = float(latitude)
-            longitude = float(longitude)
-        except (ValueError, TypeError):
-            continue
-
-        if (abs(latitude - lat) < 0.0005 and abs(longitude - lng) < 0.0005):
-            return library
+    for lib in libraries:
+        coords = valid_coords(getattr(lib, "latitude", None),getattr(lib, "longitude", None),)
+        if coords and all(abs(a - b) < 0.000005 for a, b in zip(coords, position)):
+            return lib
     return None
-
-def show_map(libraries):
-    with st.container(border=True):
-        st.markdown('<div class="section-heading">♧ &nbsp; Library Map</div>',unsafe_allow_html=True,)
-        st.caption("Click a marker to view library information.")
-        map_object = folium.Map(location=[37.5665, 126.9780],zoom_start=11,tiles="OpenStreetMap",control_scale=True,zoom_control=True,)
-        LocateControl(
-            auto_start=False,
-            strings={"title": "Show my location","popup": "You are here",},).add_to(map_object)
-        for library in libraries:
-            latitude = getattr(library, "latitude", None)
-            longitude = getattr(library, "longitude", None)
-            if latitude is None or longitude is None:
-                continue
-            try:
-                latitude = float(latitude)
-                longitude = float(longitude)
-            except (ValueError, TypeError):
-                continue
-            name = str(getattr(library, "name", "Library"))
-            district = str(getattr(library, "district", "N/A"))
-            folium.Marker(
-                location=[latitude, longitude],
-                tooltip=name,
-                popup=folium.Popup(f"<b>{name}</b><br>{district}",max_width=250,),
-                icon=folium.Icon(color="darkred",icon="book",prefix="fa",),
-            ).add_to(map_object)
-        map_data = st_folium(map_object,width=None,height=390,key="library_map",returned_objects=["last_object_clicked"],)
-    return map_data
-
-def show_metrics(df, found):
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total Libraries",get_total_libraries(df),)
-    col2.metric("Total Districts",get_total_districts(df),)
-    col3.metric("Libraries Found",found,)
 
 def show_chart(df):
     with st.container(border=True):
-        st.markdown('<div class="section-heading">Libraries by District</div>',unsafe_allow_html=True,)
-        district_counts = get_libraries_per_district(df)
-        if district_counts is None:
+        heading("Libraries by District")
+        counts = get_libraries_per_district(df)
+        if counts is None or len(counts) == 0:
             st.info("No district data available.")
             return
-        chart_data =(district_counts.rename("Number of Libraries").reset_index())
-        chart =(
+        chart_data = counts.rename("Number of Libraries").reset_index()
+        chart = (
             alt.Chart(chart_data)
             .mark_bar(color="#8C7655")
             .encode(
                 x=alt.X("Number of Libraries:Q",title="Number of Libraries",),
                 y=alt.Y("District_Name:N",sort="-x",title="District",),
-                tooltip=["District_Name","Number of Libraries",],
-            ).properties(height=380))
-        st.altair_chart(chart,use_container_width=True,)
+                tooltip=["District_Name", "Number of Libraries"],)
+            .properties(height=380))
+        st.altair_chart(chart, use_container_width=True)
 
 def main():
+    init_state()
     df, libraries = load_library_data()
-    show_title()
-    districts ={
-        str(getattr(library, "district", "")).strip()
-        for library in libraries
-        if getattr(library, "district", None)}
-    filtered = filter_libraries(libraries,st.session_state.applied_search,st.session_state.applied_district,)
-
-    search_applied =(bool(st.session_state.applied_search) or st.session_state.applied_district != "All Districts")
-    found = len(filtered) if search_applied else 0
-
-    if st.session_state.applied_search:
-        st.session_state.selected_library =(filtered[0] if filtered else None)
-
-    elif st.session_state.applied_district != "All Districts":
-        if filtered:
-            current = st.session_state.selected_library
-            if current not in filtered:
-                st.session_state.selected_library = filtered[0]
-        else:
-            st.session_state.selected_library = None
-
+    st.markdown(
+        '<div class="page-header">'
+        '<h1>Seoul Public Library</h1>'
+        '</div>',
+        unsafe_allow_html=True,)
+    districts = {
+        str(lib.district).strip()
+        for lib in libraries
+        if getattr(lib, "district", None)}
+    s = st.session_state
+    filtered = filter_libraries(libraries,s.applied_search,s.applied_district,)
+    searching = bool(s.applied_search) or s.applied_district != ALL
+    found = len(filtered) if searching else 0
+    if searching and s.selected_library not in filtered:
+        s.selected_library = filtered[0] if filtered else None
     left, right = st.columns([1, 2], gap="small")
     with left:
-        show_search_area(districts)
-        if st.session_state.applied_search:
+        show_search(districts)
+        if s.applied_search:
             if filtered:
-                st.success(f"Found: {filtered[0].name}")
+                st.success(f"Found {len(filtered)} matching libraries.")
             else:
                 st.warning("No library found with this name.")
-        elif st.session_state.applied_district != "All Districts":
-            st.info(
-                f"Found {len(filtered)} libraries in "
-                f"{st.session_state.applied_district}.")
-        if st.session_state.selected_library is not None:
-            show_library_information(st.session_state.selected_library)
+        elif s.applied_district != ALL:
+            st.info(f"Found {len(filtered)} libraries "f"in {s.applied_district}.")
+        info_slot = st.empty()
+    visible = filtered if searching else libraries
     with right:
-        map_libraries = filtered if search_applied else libraries
-        map_data = show_map(map_libraries)
-    clicked_library = get_clicked_library(map_libraries,map_data,)
-    if clicked_library is not None:
-        if clicked_library != st.session_state.selected_library:
-            st.session_state.selected_library = clicked_library
-            st.rerun()
+        map_data = show_map(visible,map_key="library_map",)
+    clicked = get_clicked_library(visible, map_data)
+    if clicked is not None:
+        s.selected_library = clicked
+    with info_slot.container():
+        show_info(s.selected_library)
     st.divider()
-    show_metrics(df, found)
+    a, b, c = st.columns(3)
+    a.metric("Total Libraries", get_total_libraries(df))
+    b.metric("Total Districts", get_total_districts(df))
+    c.metric("Libraries Found", found)
     st.divider()
     show_chart(df)
 
+load_css()
 if __name__ == "__main__":
     main()

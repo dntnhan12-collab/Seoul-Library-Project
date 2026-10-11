@@ -2,7 +2,7 @@
 
 An interactive Streamlit dashboard for exploring Seoul's public libraries. Search libraries by name or district, view their locations on a map, inspect library details, compare library counts by district, and see summary statistics.
 
-The dashboard is currently run locally; it does not have a hosted website URL yet. The GitHub repository is public: [Seoul-Library-Project](https://github.com/dntnhan12-collab/Seoul-Library-Project).
+The public dashboard is live at [Seoul Public Library Explorer](https://seoul-library-explorer.streamlit.app/). Its source code is in the public [Seoul-Library-Project GitHub repository](https://github.com/dntnhan12-collab/Seoul-Library-Project).
 
 ## Run the dashboard
 

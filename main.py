@@ -1,20 +1,14 @@
-import streamlit as st
 import app
-from services.analyzer import (
-    get_total_districts,
-    get_total_libraries,
-    get_libraries_per_district,
-)
-from services.data_manager import get_cleaned_library_data
+import streamlit as st
 from models.library_manager import LibraryManager
-from services.search import (
-    filter_by_district,
-    find_exact_libraries,
-    search_libraries,
-)
+from services.analyzer import (get_libraries_per_district, get_total_districts, get_total_libraries,)
+from services.data_manager import get_cleaned_library_data
+from services.search import (create_library_filters, filter_libraries, find_exact_libraries,)
 
 def main():
-    st.set_page_config(page_title="Seoul Public Library Explorer", layout="wide")
+    st.set_page_config(
+        page_title="Seoul Public Library Explorer", layout="wide"
+    )
     app.show_title()
 
     try:
@@ -25,22 +19,23 @@ def main():
 
     library_manager = LibraryManager.from_dataframe(libraries)
 
-    st.session_state.setdefault("applied_name", "")
-    st.session_state.setdefault("applied_district", "All districts")
-    st.session_state.setdefault("selected_library_id", None)
-    st.session_state.setdefault("last_map_click_count", None)
-    st.session_state.setdefault("ignore_map_click_once", False)
-    st.session_state.setdefault("suggestion_selected", False)
+    state = st.session_state
+    state.setdefault("applied_name", "")
+    state.setdefault("applied_district", "All districts")
+    state.setdefault("selected_library_id", None)
+    state.setdefault("last_map_click_count", None)
+    state.setdefault("ignore_map_click_once", False)
+    state.setdefault("suggestion_selected", False)
 
     districts = sorted(libraries["District_Name"].dropna().unique())
     search_column, map_column = st.columns([1, 2])
     app.show_search_panel(search_column, districts, libraries)
 
-    matching_libraries = search_libraries(
-        library_manager.get_all(), st.session_state["applied_name"]
+    filters = create_library_filters(
+        state["applied_name"], state["applied_district"]
     )
-    matching_libraries = filter_by_district(
-        matching_libraries, st.session_state["applied_district"]
+    matching_libraries = filter_libraries(
+        library_manager.get_all(), filters
     )
 
     matching_serial_numbers = {
@@ -51,10 +46,10 @@ def main():
             matching_serial_numbers
         )
     ]
-    if st.session_state["suggestion_selected"]:
+    if state["suggestion_selected"]:
         shown = shown[
             shown["Library_Serial_Number"].astype(str)
-            == st.session_state["selected_library_id"]
+            == state["selected_library_id"]
         ]
 
     app.show_summary(
@@ -64,15 +59,15 @@ def main():
     )
 
     clicked_coordinates, click_count = app.show_map(map_column, shown)
-    ignore_old_map_click = st.session_state["ignore_map_click_once"]
-    st.session_state["ignore_map_click_once"] = False
+    ignore_old_map_click = state["ignore_map_click_once"]
+    state["ignore_map_click_once"] = False
 
     if (
         not ignore_old_map_click
         and click_count is not None
-        and click_count != st.session_state["last_map_click_count"]
+        and click_count != state["last_map_click_count"]
     ):
-        st.session_state["last_map_click_count"] = click_count
+        state["last_map_click_count"] = click_count
 
         if clicked_coordinates and not shown.empty:
             distances = (
@@ -80,11 +75,11 @@ def main():
                 + (shown["Longitude"] - clicked_coordinates["lng"]) ** 2
             )
             clicked_row = shown.loc[distances.idxmin()]
-            st.session_state["selected_library_id"] = str(
+            state["selected_library_id"] = str(
                 clicked_row["Library_Serial_Number"]
             )
 
-    selected_id = st.session_state["selected_library_id"]
+    selected_id = state["selected_library_id"]
     selected_rows = (
         shown[shown["Library_Serial_Number"].astype(str) == selected_id]
         if selected_id
@@ -92,9 +87,7 @@ def main():
     )
 
     if selected_rows.empty and not shown.empty:
-        exact_matches = find_exact_libraries(
-            shown, st.session_state["applied_name"]
-        )
+        exact_matches = find_exact_libraries(shown, state["applied_name"])
         if len(exact_matches) == 1:
             selected_rows = exact_matches
 
@@ -102,6 +95,7 @@ def main():
         app.show_library_information(selected_rows.iloc[0], search_column)
 
     app.show_district_chart(get_libraries_per_district(libraries))
+
 
 if __name__ == "__main__":
     main()

@@ -51,6 +51,13 @@ The project uses the Seoul Metropolitan Government dataset **Seoul Public Librar
 
 In short: CSV → cleaned DataFrame → `LibraryManager` → `Library` objects → search/filter → map, details, metrics, and chart.
 
+## SOLID principles demonstrated
+
+This project focuses on the two SOLID principles most clearly represented in its current code:
+
+- **Single Responsibility (S):** Responsibilities are separated across modules. `data_manager.py` loads and cleans data, `analyzer.py` calculates statistics, `search.py` filters libraries, and `app.py` renders the interface.
+- **Open/Closed (O):** `search.py` defines the `LibraryFilter` contract. A new filter can implement `matches()` and be passed to `filter_libraries()` without changing the shared filtering function.
+
 ## Dashboard features
 
 - Search suggestions appear while typing a library name; users can select a suggestion to show that library's information and location.

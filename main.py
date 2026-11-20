@@ -27,7 +27,8 @@ def main():
     state.setdefault("suggestion_selected", False)
 
     districts = sorted(libraries["District_Name"].dropna().unique())
-    search_column, map_column = st.columns([1, 2])
+    explore_tab, statistics_tab = st.tabs(["Explore", "District statistics"])
+    search_column, map_column = explore_tab.columns([1, 3], gap="large")
     app.show_search_panel(search_column, districts, libraries)
 
     filters = create_library_filters(
@@ -51,11 +52,7 @@ def main():
             == state["selected_library_id"]
         ]
 
-    app.show_summary(
-        get_total_libraries(libraries),
-        get_total_districts(libraries),
-        len(shown),
-    )
+    search_column.caption(f"{len(shown)} {'library' if len(shown) == 1 else 'libraries'} found")
 
     selected_id = state["selected_library_id"]
     selected_rows = (
@@ -97,7 +94,9 @@ def main():
     if not selected_rows.empty:
         app.show_library_information(selected_rows.iloc[0], search_column)
 
-    app.show_district_chart(get_libraries_per_district(libraries))
+    with statistics_tab:
+        app.show_summary(get_total_libraries(libraries), get_total_districts(libraries))
+        app.show_district_chart(get_libraries_per_district(libraries))
 
 
 if __name__ == "__main__":

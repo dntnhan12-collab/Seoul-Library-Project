@@ -56,15 +56,15 @@ def clear_suggestion_choice():
 
 def show_title():
     st.markdown(
-        '<h1 style="text-align:center; color:#6F1D1B; font-size:3.5rem; '
-        'font-weight:800; line-height:1.15; letter-spacing:0.02em; '
-        'margin:0.25rem 0 1.5rem;">Seoul Public Library Explorer</h1>',
+        '<h1 style="font-size:clamp(1.7rem, 4vw, 2.35rem); '
+        'font-weight:750; line-height:1.15; '
+        'margin:0 0 0.65rem;">Seoul Public Library Explorer</h1>',
         unsafe_allow_html=True,
     )
 @st.fragment
 def show_search_panel(container, districts, libraries):
     with container:
-        st.subheader("Library Search")
+        st.subheader("Find a library")
         name = st.text_input(
             "Search by name",
             key="search_name",
@@ -131,16 +131,16 @@ def show_search_panel(container, districts, libraries):
 
     if st.session_state.pop("_search_needs_full_rerun", False):
         st.rerun()
-def show_summary(total_libraries, total_districts, found_count):
-    total_column, district_column, found_column = st.columns(3)
+def show_summary(total_libraries, total_districts):
+    total_column, district_column = st.columns(2)
     total_column.metric("Total libraries", total_libraries)
     district_column.metric("Districts", total_districts)
-    found_column.metric("Libraries found", found_count)
 
 def show_map(container, libraries, revision, view=None):
     with container:
-        st.subheader("Library Map")
-        show_subway = st.toggle("Subway", key="show_subway")
+        title_column, controls_column = st.columns([3, 1], vertical_alignment="center")
+        title_column.subheader("Library map")
+        show_subway = controls_column.toggle("Subway", key="show_subway")
 
         if libraries.empty:
             st.info("No libraries match the search. Try another name or district.")
@@ -244,7 +244,7 @@ def show_map(container, libraries, revision, view=None):
         result = st_folium(
             library_map,
             feature_group_to_add=subway,
-            height=500,
+            height=590,
             use_container_width=True,
             returned_objects=[
                 "last_clicked", "last_object_clicked", "last_object_clicked_tooltip",
@@ -256,11 +256,22 @@ def show_map(container, libraries, revision, view=None):
     return result or {}
 def show_library_information(row, container):
     library = Library.from_row(row)
+    details = library.details()
+    destination = urlencode({"api": 1, "destination": f"{library.latitude},{library.longitude}"})
     with container:
         with st.container(border=True):
-            st.subheader("Library Information")
-            st.markdown(f"### {library.name}")
-            st.table(library.details())
+            st.markdown(f"#### {library.name}")
+            st.caption(library.district)
+            for label in ("Address", "Operating Hours", "Closed Days", "Phone"):
+                value = str(details[label]).strip()
+                if value and value.lower() not in {"nan", "none", "<na>"}:
+                    st.markdown(f"**{label}**  \n{value}")
+            st.link_button("Get directions", f"https://www.google.com/maps/dir/?{destination}", width="stretch")
+            website = str(library.website).strip()
+            if website.startswith("www."):
+                website = f"https://{website}"
+            if website.startswith(("https://", "http://")):
+                st.link_button("Library website", website, width="stretch")
 
 def show_district_chart(counts):
     st.subheader("Libraries by District")
@@ -269,7 +280,7 @@ def show_district_chart(counts):
 
     chart = (
         alt.Chart(chart_data)
-        .mark_bar(color="#BB9457")
+        .mark_bar(color="#6F1D1B", cornerRadiusEnd=3)
         .encode(
             x=alt.X(
                 "Libraries:Q",
@@ -280,7 +291,7 @@ def show_district_chart(counts):
             y=alt.Y("District:N", title=None, sort="-x"),
             tooltip=["District:N", "Libraries:Q"],
         )
-        .properties(height=700)
+        .properties(height=alt.Step(21))
     )
 
     st.altair_chart(chart, width="stretch")

@@ -39,6 +39,11 @@ The public dashboard is live at [Seoul Public Library Explorer](https://seoul-li
 
 ## Data used
 
+The map's **Subway** toggle displays 13 lines and 516 stations from the
+[Seoul Metro Isochrone GeoJSON files](https://github.com/matassp/seoul-isochrone/tree/main/public/data).
+The route and station geometry comes from [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
+under the Open Database License (ODbL).
+
 The project uses the Seoul Metropolitan Government dataset **Seoul Public Library Status Information** (official Korean title: 서울시 공공도서관 현황정보), published on the [Seoul Open Data Plaza](https://data.seoul.go.kr/dataList/OA-15480/S/1/datasetView.do). The downloaded project data is stored in `data/seoul_library_english.csv`; the team prepared the CSV in English for this application. It contains library names, districts, addresses, contact and operating information, and coordinates.
 
 ## Class design and object interactions

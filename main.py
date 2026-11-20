@@ -23,8 +23,7 @@ def main():
     state.setdefault("applied_name", "")
     state.setdefault("applied_district", "All districts")
     state.setdefault("selected_library_id", None)
-    state.setdefault("last_map_click_count", None)
-    state.setdefault("ignore_map_click_once", False)
+    state.setdefault("map_revision", 0)
     state.setdefault("suggestion_selected", False)
 
     districts = sorted(libraries["District_Name"].dropna().unique())
@@ -58,33 +57,37 @@ def main():
         len(shown),
     )
 
-    clicked_coordinates, click_count = app.show_map(map_column, shown)
-    ignore_old_map_click = state["ignore_map_click_once"]
-    state["ignore_map_click_once"] = False
-
-    if (
-        not ignore_old_map_click
-        and click_count is not None
-        and click_count != state["last_map_click_count"]
-    ):
-        state["last_map_click_count"] = click_count
-
-        if clicked_coordinates and not shown.empty:
-            distances = (
-                (shown["Latitude"] - clicked_coordinates["lat"]) ** 2
-                + (shown["Longitude"] - clicked_coordinates["lng"]) ** 2
-            )
-            clicked_row = shown.loc[distances.idxmin()]
-            state["selected_library_id"] = str(
-                clicked_row["Library_Serial_Number"]
-            )
-
     selected_id = state["selected_library_id"]
     selected_rows = (
         shown[shown["Library_Serial_Number"].astype(str) == selected_id]
         if selected_id
         else shown.iloc[0:0]
     )
+    map_libraries = shown if selected_rows.empty else selected_rows
+    map_event = app.show_map(
+        map_column, map_libraries, state["map_revision"], state.get("map_view")
+    )
+    if not selected_rows.empty and map_event.get("last_clicked"):
+        app.clear_suggestion_choice()
+        state["map_view"] = {"center": map_event["center"], "zoom": map_event["zoom"]}
+        state["map_revision"] += 1
+        st.rerun()
+
+    clicked_coordinates = map_event.get("last_object_clicked")
+    if clicked_coordinates and selected_rows.empty and not shown.empty:
+        candidates = shown[
+            (shown["Latitude"] == clicked_coordinates["lat"])
+            & (shown["Longitude"] == clicked_coordinates["lng"])
+        ]
+        clicked_name = map_event.get("last_object_clicked_tooltip")
+        if clicked_name:
+            candidates = candidates[candidates["Library_Name"].str.strip() == clicked_name]
+        if not candidates.empty:
+            clicked_row = candidates.iloc[0]
+            state["selected_library_id"] = str(clicked_row["Library_Serial_Number"])
+            state["map_view"] = {"center": map_event["center"], "zoom": map_event["zoom"]}
+            state["map_revision"] += 1
+            st.rerun()
 
     if selected_rows.empty and not shown.empty:
         exact_matches = find_exact_libraries(shown, state["applied_name"])

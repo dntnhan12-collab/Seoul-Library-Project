@@ -1,8 +1,32 @@
+from html import escape
+import json
+from os import getenv
+from pathlib import Path
+from urllib.parse import urlencode
+
 import altair as alt
 import folium
+from folium.elements import EventHandler
+from folium.utilities import JsCode
 import streamlit as st
 from streamlit_folium import st_folium
 from models.library import Library
+
+SUBWAY_COLORS = {
+    "1": "#0052A4", "2": "#00A84D", "3": "#EF7C1C", "4": "#00A5DE",
+    "5": "#996CAC", "6": "#CD7C2F", "7": "#747F00", "8": "#E6186C",
+    "9": "#BDB092", "airport": "#0090D2", "bundang": "#E3A800",
+    "gyeongui": "#69BC9B", "shinbundang": "#D4003B",
+}
+
+
+@st.cache_data
+def load_subway_data():
+    data_dir = Path(__file__).resolve().parent / "data"
+    return (
+        json.loads((data_dir / "seoul_subway_lines.geojson").read_text(encoding="utf-8")),
+        json.loads((data_dir / "seoul_subway_stations.geojson").read_text(encoding="utf-8")),
+    )
 
 def clear_search():
     st.session_state["search_name"] = ""
@@ -16,7 +40,8 @@ def _set_applied_search(name, district, library_id=None, is_suggestion=False):
     st.session_state["applied_district"] = district
     st.session_state["selected_library_id"] = library_id
     st.session_state["suggestion_selected"] = is_suggestion
-    st.session_state["ignore_map_click_once"] = True
+    st.session_state["map_revision"] += 1
+    st.session_state.pop("map_view", None)
 def apply_search():
     _set_applied_search(
         st.session_state.get("search_name", "").strip(),
@@ -112,46 +137,123 @@ def show_summary(total_libraries, total_districts, found_count):
     district_column.metric("Districts", total_districts)
     found_column.metric("Libraries found", found_count)
 
-def show_map(container, libraries):
+def show_map(container, libraries, revision, view=None):
     with container:
         st.subheader("Library Map")
+        show_subway = st.toggle("Subway", key="show_subway")
 
         if libraries.empty:
             st.info("No libraries match the search. Try another name or district.")
 
-        if not libraries.empty:
+        zoom = 14 if len(libraries) == 1 else 11
+        if view:
+            center = [view["center"]["lat"], view["center"]["lng"]]
+            zoom = view["zoom"]
+        elif not libraries.empty:
             center = [libraries["Latitude"].mean(), libraries["Longitude"].mean()]
         else:
             center = [38, 127]
 
-        zoom = 14 if len(libraries) == 1 else 11
-        library_map = folium.Map(location=center, zoom_start=zoom)
-        folium.plugins.LocateControl(
-            position="topleft",
-            auto_start=False,
-        ).add_to(library_map)
+        voyager_tiles = "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+        carto_key = getenv("CARTO_BASEMAPS_API_KEY", "").strip()
+        if carto_key:
+            voyager_tiles += "?" + urlencode({"key": carto_key})
 
+        library_map = folium.Map(
+            location=center,
+            zoom_start=zoom,
+            zoom_control="bottomright",
+            scroll_wheel_zoom=True,
+            double_click_zoom=False,
+            touch_zoom=False,
+            box_zoom=False,
+            keyboard=False,
+            inertia=False,
+            tiles=folium.TileLayer(
+                tiles=voyager_tiles,
+                name="CARTO Voyager",
+                attr=(
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">'
+                    'OpenStreetMap</a> contributors &copy; '
+                    '<a href="https://carto.com/attributions">CARTO</a>'
+                ),
+            ),
+        )
+        library_map.get_root().header.add_child(folium.Element("""
+            <style>
+                .subway-station-label { visibility: hidden; }
+                .subway-labels-visible .subway-station-label,
+                .subway-station-label.station-hovered { visibility: visible; }
+            </style>
+        """))
+        library_map.add_child(EventHandler("zoomend layeradd", JsCode("""
+            function (event) {
+                const map = event.target;
+                map.getContainer().classList.toggle('subway-labels-visible', map.getZoom() >= 14);
+            }
+        """)))
         for _, row in libraries.iterrows():
             folium.Marker(
                 location=[row["Latitude"], row["Longitude"]],
-                tooltip=row["Library_Name"],
+                tooltip=escape(row["Library_Name"]),
                 icon=folium.Icon(color="darkred"),
+                bubbling_mouse_events=False,
             ).add_to(library_map)
+
+        subway = folium.FeatureGroup(name="Subway")
+        if show_subway:
+            lines, stations = load_subway_data()
+            folium.GeoJson(
+                lines,
+                style_function=lambda feature: {
+                    "color": SUBWAY_COLORS[feature["properties"]["lineId"]],
+                    "weight": 3,
+                    "opacity": 0.85,
+                    "interactive": False,
+                },
+            ).add_to(subway)
+            station_layer = folium.GeoJson(
+                stations,
+                marker=folium.CircleMarker(
+                    radius=3, color="#334155", weight=1,
+                    fill=True, fill_color="#ffffff", fill_opacity=1,
+                ),
+            ).add_to(subway)
+            station_layer.add_child(EventHandler("add", JsCode("""
+                function (event) {
+                    event.target.eachLayer((layer) => {
+                        const label = document.createElement('span');
+                        const station = layer.feature.properties;
+                        label.textContent = station.name_en || station.name_ko;
+                        layer.bindTooltip(label, {
+                            permanent: true,
+                            direction: 'right',
+                            offset: [5, 0],
+                            className: 'subway-station-label'
+                        });
+                        layer.on('mouseover', () => {
+                            layer.getTooltip().getElement()?.classList.add('station-hovered');
+                        });
+                        layer.on('mouseout', () => {
+                            layer.getTooltip().getElement()?.classList.remove('station-hovered');
+                        });
+                    });
+                }
+            """), once=True))
 
         result = st_folium(
             library_map,
+            feature_group_to_add=subway,
             height=500,
             use_container_width=True,
-            returned_objects=["last_object_clicked", "last_object_clicked_count"],
-            key="library_map",
+            returned_objects=[
+                "last_clicked", "last_object_clicked", "last_object_clicked_tooltip",
+                "center", "zoom",
+            ],
+            key=f"library_map_{revision}",
         )
 
-    if result:
-        return (
-            result.get("last_object_clicked"),
-            result.get("last_object_clicked_count"),
-        )
-    return None, None
+    return result or {}
 def show_library_information(row, container):
     library = Library.from_row(row)
     with container:

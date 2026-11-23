@@ -1,5 +1,7 @@
 import html
+import json
 import math
+from pathlib import Path
 from urllib.parse import urlsplit
 
 import altair as alt
@@ -11,6 +13,22 @@ from streamlit_folium import st_folium
 from models.library import Library
 from services.routing import ROUTE_MODES, RoutingError, coordinates, naver_browser_url, walking_route
 from location_control import location_button
+
+SUBWAY_COLORS = {
+    "1": "#0052A4", "2": "#00A84D", "3": "#EF7C1C", "4": "#00A5DE",
+    "5": "#996CAC", "6": "#CD7C2F", "7": "#747F00", "8": "#E6186C",
+    "9": "#BDB092", "airport": "#0090D2", "bundang": "#E3A800",
+    "gyeongui": "#69BC9B", "shinbundang": "#D4003B",
+}
+
+
+@st.cache_data
+def load_subway_data():
+    data_dir = Path(__file__).resolve().parent / "data"
+    return (
+        json.loads((data_dir / "seoul_subway_lines.geojson").read_text(encoding="utf-8")),
+        json.loads((data_dir / "seoul_subway_stations.geojson").read_text(encoding="utf-8")),
+    )
 
 def clear_search():
     st.session_state["search_name"] = ""
@@ -154,6 +172,19 @@ def build_library_map(libraries, route=None, origin=None, view=None):
             }, true);
         }
     """), once=True))
+    library_map.get_root().header.add_child(folium.Element("""
+        <style>
+            .subway-station-label { visibility: hidden; }
+            .subway-labels-visible .subway-station-label,
+            .subway-station-label.station-hovered { visibility: visible; }
+        </style>
+    """))
+    library_map.add_child(EventHandler("zoomend layeradd", JsCode("""
+        function (event) {
+            const map = event.target;
+            map.getContainer().classList.toggle('subway-labels-visible', map.getZoom() >= 14);
+        }
+    """)))
     folium.plugins.LocateControl(position="topleft", auto_start=False).add_to(library_map)
     for _, row in libraries.iterrows():
         folium.Marker(
@@ -178,15 +209,59 @@ def build_library_map(libraries, route=None, origin=None, view=None):
 
 def show_map(container, libraries, route=None, *, revision=0, view=None):
     with container:
-        st.subheader("Library Map")
+        title_column, controls_column = st.columns([3, 1], vertical_alignment="center")
+        title_column.subheader("Library Map")
+        show_subway = controls_column.toggle("Subway", key="show_subway")
 
         if libraries.empty:
             st.info("No libraries match the search. Try another name or district.")
 
         library_map = build_library_map(libraries, route, st.session_state.get("route_origin"), view)
 
+        subway = folium.FeatureGroup(name="Subway")
+        if show_subway:
+            lines, stations = load_subway_data()
+            folium.GeoJson(
+                lines,
+                style_function=lambda feature: {
+                    "color": SUBWAY_COLORS[feature["properties"]["lineId"]],
+                    "weight": 3,
+                    "opacity": 0.85,
+                    "interactive": False,
+                },
+            ).add_to(subway)
+            station_layer = folium.GeoJson(
+                stations,
+                marker=folium.CircleMarker(
+                    radius=3, color="#334155", weight=1,
+                    fill=True, fill_color="#ffffff", fill_opacity=1,
+                ),
+            ).add_to(subway)
+            station_layer.add_child(EventHandler("add", JsCode("""
+                function (event) {
+                    event.target.eachLayer((layer) => {
+                        const label = document.createElement('span');
+                        const station = layer.feature.properties;
+                        label.textContent = station.name_en || station.name_ko;
+                        layer.bindTooltip(label, {
+                            permanent: true,
+                            direction: 'right',
+                            offset: [5, 0],
+                            className: 'subway-station-label'
+                        });
+                        layer.on('mouseover', () => {
+                            layer.getTooltip().getElement()?.classList.add('station-hovered');
+                        });
+                        layer.on('mouseout', () => {
+                            layer.getTooltip().getElement()?.classList.remove('station-hovered');
+                        });
+                    });
+                }
+            """), once=True))
+
         result = st_folium(
             library_map,
+            feature_group_to_add=subway,
             height=500,
             use_container_width=True,
             returned_objects=["last_clicked", "last_object_clicked", "last_object_clicked_tooltip", "center", "zoom"],

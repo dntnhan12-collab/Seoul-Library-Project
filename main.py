@@ -24,7 +24,6 @@ def main():
     state.setdefault("applied_name", "")
     state.setdefault("applied_district", "All districts")
     state.setdefault("selected_library_id", None)
-    state.setdefault("map_marker_focused", False)
     state.setdefault("map_revision", 0)
     state.setdefault("suggestion_selected", False)
 
@@ -80,34 +79,7 @@ def main():
     else:
         app.clear_route()
 
-    focused = state["map_marker_focused"]
-    map_libraries = selected_rows if focused else shown
-    map_result = app.show_map(
-        map_area, map_libraries, route, revision=state["map_revision"], view=state.get("map_view")
-    )
-    if focused and map_result.get("last_clicked"):
-        state["map_marker_focused"] = False
-        state["map_view"] = {"center": map_result["center"], "zoom": map_result["zoom"]}
-        state["map_revision"] += 1
-        st.rerun()
-
-    clicked_coordinates = map_result.get("last_object_clicked")
-    if not focused and clicked_coordinates:
-        clicked_name = map_result.get("last_object_clicked_tooltip")
-        clicked_rows = shown[
-            (shown["Latitude"] - clicked_coordinates["lat"]).abs().lt(0.000001)
-            & (shown["Longitude"] - clicked_coordinates["lng"]).abs().lt(0.000001)
-            & (shown["Library_Name"].str.strip() == clicked_name)
-        ]
-        if not clicked_rows.empty:
-            clicked_id = str(clicked_rows.iloc[0]["Library_Serial_Number"])
-            if clicked_id != selected_id:
-                app.clear_route()
-            state["selected_library_id"] = clicked_id
-            state["map_marker_focused"] = True
-            state["map_view"] = {"center": map_result["center"], "zoom": map_result["zoom"]}
-            state["map_revision"] += 1
-            st.rerun()
+    app.show_map(map_area, shown, route, revision=state["map_revision"])
 
     app.show_district_chart(get_libraries_per_district(libraries))
 

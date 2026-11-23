@@ -44,9 +44,7 @@ def _set_applied_search(name, district, library_id=None, is_suggestion=False):
     st.session_state["applied_district"] = district
     st.session_state["selected_library_id"] = library_id
     st.session_state["suggestion_selected"] = is_suggestion
-    st.session_state["map_marker_focused"] = False
     st.session_state["map_revision"] += 1
-    st.session_state.pop("map_view", None)
 def apply_search():
     _set_applied_search(
         st.session_state.get("search_name", "").strip(),
@@ -59,7 +57,6 @@ def clear_suggestion_choice():
     clear_route()
     st.session_state["selected_library_id"] = None
     st.session_state["suggestion_selected"] = False
-    st.session_state["map_marker_focused"] = False
     st.session_state["map_revision"] += 1
 
 def show_title():
@@ -145,15 +142,12 @@ def show_summary(total_libraries, total_districts, found_count):
     district_column.metric("Districts", total_districts)
     found_column.metric("Libraries found", found_count)
 
-def build_library_map(libraries, route=None, origin=None, view=None):
+def build_library_map(libraries):
     center = (
         [libraries["Latitude"].mean(), libraries["Longitude"].mean()]
         if not libraries.empty else [37.5665, 126.9780]
     )
     zoom = 14 if len(libraries) == 1 else 11
-    if view:
-        center = [view["center"]["lat"], view["center"]["lng"]]
-        zoom = view["zoom"]
     attribution = (
         '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · '
         '<a href="https://routing.openstreetmap.de/about.html">OSRM / FOSSGIS</a> · '
@@ -197,28 +191,94 @@ def build_library_map(libraries, route=None, origin=None, view=None):
         }
     """)))
     folium.plugins.LocateControl(position="topleft", auto_start=False).add_to(library_map)
+    markers = folium.FeatureGroup(name="Libraries").add_to(library_map)
     for _, row in libraries.iterrows():
         folium.Marker(
             location=[row["Latitude"], row["Longitude"]],
             tooltip=html.escape(str(row["Library_Name"])),
             icon=folium.Icon(color="darkred"),
             bubbling_mouse_events=False,
-        ).add_to(library_map)
-    if origin:
-        folium.Marker(origin, tooltip="Starting point", icon=folium.Icon(color="green", icon="user")).add_to(library_map)
-    if route:
-        bounds = [origin, route["destination"], *route["points"]]
-        folium.PolyLine(
-            route["points"], color="#2563EB", weight=6, opacity=0.9,
-            tooltip="Walking", interactive=False,
-        ).add_to(library_map)
-        library_map.fit_bounds(bounds, padding=(35, 35), max_zoom=16)
-    elif origin and len(libraries) == 1 and not view:
-        library_map.fit_bounds([origin, center], padding=(35, 35), max_zoom=16)
+        ).add_to(markers)
+    markers.add_child(EventHandler("add", JsCode("""
+        function (event) {
+            const markers = event.target;
+            const map = markers._map;
+            let selected = null;
+
+            function showMarkers(only) {
+                selected = only;
+                markers.eachLayer((marker) => {
+                    const visible = !only || marker === only;
+                    marker.setOpacity(visible ? 1 : 0);
+                    const icon = marker.getElement();
+                    if (icon) icon.style.visibility = visible ? '' : 'hidden';
+                });
+            }
+
+            markers.on('click', (click) => {
+                if (click.layer && click.layer !== selected) showMarkers(click.layer);
+            });
+            map.on('click', () => {
+                if (selected) showMarkers(null);
+            });
+        }
+    """), once=True))
     return library_map
 
 
-def show_map(container, libraries, route=None, *, revision=0, view=None):
+def build_directions_layer(libraries, route, origin):
+    destination = None
+    if route:
+        destination = route["destination"]
+    elif origin and len(libraries) == 1:
+        row = libraries.iloc[0]
+        destination = [row["Latitude"], row["Longitude"]]
+
+    directions = folium.FeatureGroup(
+        name="Directions", show=False,
+        destination=destination,
+        fit_key=json.dumps([origin, destination, bool(route)]) if destination else None,
+    )
+    if origin:
+        folium.Marker(origin, tooltip="Starting point", icon=folium.Icon(color="green", icon="user")).add_to(directions)
+    if route:
+        folium.PolyLine(
+            route["points"], color="#2563EB", weight=6, opacity=0.9,
+            tooltip="Walking", interactive=False,
+        ).add_to(directions)
+    directions.add_child(EventHandler("add", JsCode("""
+        function (event) {
+            const layer = event.target;
+            const map = layer._map;
+            const key = layer.options.fitKey;
+            if (key && key !== map.libraryDirectionsFitKey) {
+                const bounds = layer.getBounds().extend(layer.options.destination);
+                map.fitBounds(bounds, {padding: [35, 35], maxZoom: 16});
+            }
+            map.libraryDirectionsFitKey = key;
+        }
+    """), once=True))
+    return directions
+
+
+def select_map_library(key, libraries):
+    clicked = st.session_state.get(key) or {}
+    coordinates = clicked.get("last_object_clicked")
+    name = clicked.get("last_object_clicked_tooltip")
+    if coordinates and name:
+        matches = libraries[
+            (libraries["Latitude"] - coordinates["lat"]).abs().lt(0.000001)
+            & (libraries["Longitude"] - coordinates["lng"]).abs().lt(0.000001)
+            & (libraries["Library_Name"].str.strip() == name)
+        ]
+        if not matches.empty:
+            library_id = str(matches.iloc[0]["Library_Serial_Number"])
+            if library_id != st.session_state["selected_library_id"]:
+                clear_route()
+                st.session_state["selected_library_id"] = library_id
+
+
+def show_map(container, libraries, route=None, *, revision=0):
     with container:
         title_column, controls_column = st.columns([3, 1], vertical_alignment="center")
         title_column.subheader("Library Map")
@@ -227,7 +287,8 @@ def show_map(container, libraries, route=None, *, revision=0, view=None):
         if libraries.empty:
             st.info("No libraries match the search. Try another name or district.")
 
-        library_map = build_library_map(libraries, route, st.session_state.get("route_origin"), view)
+        library_map = build_library_map(libraries)
+        directions = build_directions_layer(libraries, route, st.session_state.get("route_origin"))
 
         subway = folium.FeatureGroup(name="Subway")
         if show_subway:
@@ -270,15 +331,16 @@ def show_map(container, libraries, route=None, *, revision=0, view=None):
                 }
             """), once=True))
 
-        result = st_folium(
+        key = f"library_map_{revision}"
+        st_folium(
             library_map,
-            feature_group_to_add=subway,
+            feature_group_to_add=[subway, directions],
             height=500,
             use_container_width=True,
-            returned_objects=["last_clicked", "last_object_clicked", "last_object_clicked_tooltip", "center", "zoom"],
-            key=f"library_map_{revision}",
+            returned_objects=["last_object_clicked", "last_object_clicked_tooltip"],
+            key=key,
+            on_change=lambda: select_map_library(key, libraries),
         )
-    return result or {}
 def show_library_information(row, container):
     library = Library.from_row(row)
     with container:

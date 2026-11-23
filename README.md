@@ -63,13 +63,15 @@ This project focuses on the two SOLID principles most clearly represented in its
 - View total library and district counts, result count, library details, and a bar chart of libraries by district.
 - The **Directions** controls appear directly below the map. Select a library and travel mode, then press **Find route from my location**.
 - **Walking** gets your location and draws the route directly on this map, with distance and estimated time. Only the user marker, selected library, and route are displayed while a route is active. **Clear route** restores the library search results.
-- **Bus / subway (Naver Map)** gets your location and navigates directly to Naver in the same browser tab with both endpoints filled in. No second button or mobile app is required.
+- **Bus / subway (Naver Map)** opens a separate browser tab, gets your location, and loads Naver with both endpoints filled in. No second button or mobile app is required. The separate tab avoids Naver's restriction on embedded pages.
 
 ## Directions
 
 No API key or additional CSV is required. Walking uses the [FOSSGIS OSRM foot service](https://routing.openstreetmap.de/about.html), intended for light use. Requests are limited to one per second per app process.
 
 Location requires permission and HTTPS or localhost. The walking action shares endpoints with OSRM/FOSSGIS; the transit action shares endpoints with Naver. If location access fails, the app reports the error without opening Naver. The transferred location is a snapshot, not continuous GPS tracking. Browser shortcuts may need updating if Naver changes its URL format.
+
+Allow pop-ups for the dashboard if the browser blocks the directions tab. A temporary tab opens immediately on the click while location permission is pending; it closes if location access fails.
 
 To refresh your location or recalculate a walking route, press **Find route from my location** again. Distances and times describe the route as calculated, not live progress. The app does not automatically reroute or draw bus/subway lines on the dashboard. GPS accuracy depends on the device and browser; a phone usually provides better positioning than a desktop computer.
 
@@ -82,5 +84,7 @@ Run the automated routing checks without calling external services:
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
+
+With Node.js installed, run `node tests/location_control.test.cjs` to check the browser navigation logic using simulated location and popup callbacks.
 
 For a manual check, select a library, choose **Walking**, allow location access, and confirm the route and two markers appear. Then select **Bus / subway (Naver Map)** and press the same button to confirm Naver opens with the starting point and destination. Browser location and navigation require a browser check beyond the automated tests.

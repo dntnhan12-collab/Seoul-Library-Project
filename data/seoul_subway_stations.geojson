@@ -280,7 +280,7 @@
       "properties": {
         "id": "355173018",
         "name_ko": "홍제",
-        "name_en": "Hongje (Seoul Culture Arts Univ.)",
+        "name_en": "Hongje",
         "lines": [
           "3"
         ]
@@ -334,7 +334,7 @@
       "properties": {
         "id": "355173059",
         "name_ko": "경복궁",
-        "name_en": "Gyeongbokgung (Government Complex Seoul)",
+        "name_en": "Gyeongbokgung",
         "lines": [
           "3"
         ]
@@ -370,7 +370,7 @@
       "properties": {
         "id": "3833429767",
         "name_ko": "종로3가",
-        "name_en": "Jongno 3(sam)-ga",
+        "name_en": "Jongno 3-ga",
         "lines": [
           "1",
           "3",
@@ -390,7 +390,7 @@
       "properties": {
         "id": "5930698986",
         "name_ko": "을지로3가",
-        "name_en": "Euljiro 3(sam)-ga",
+        "name_en": "Euljiro 3-ga",
         "lines": [
           "2",
           "3"
@@ -428,7 +428,7 @@
       "properties": {
         "id": "355173044",
         "name_ko": "동대입구",
-        "name_en": "Dongguk Univ.",
+        "name_en": "Dongguk University",
         "lines": [
           "3"
         ]
@@ -577,7 +577,7 @@
       "properties": {
         "id": "5933947005",
         "name_ko": "교대",
-        "name_en": "Seoul Nat'l Univ. of Education (Court & Public Prosecutors' Office)",
+        "name_en": "Seoul National University of Education",
         "lines": [
           "2",
           "3"
@@ -596,7 +596,7 @@
       "properties": {
         "id": "1939100051",
         "name_ko": "남부터미널",
-        "name_en": "Nambu Bus Terminal (Seoul Arts Center)",
+        "name_en": "Nambu Bus Terminal",
         "lines": [
           "3"
         ]
@@ -780,7 +780,7 @@
       "properties": {
         "id": "3418807256",
         "name_ko": "경찰병원",
-        "name_en": "Nat'l Police Hospital",
+        "name_en": "National Police Hospital",
         "lines": [
           "3"
         ]
@@ -836,7 +836,7 @@
       "properties": {
         "id": "5826564342",
         "name_ko": "충정로",
-        "name_en": "Chungjeongno(Kyonggi University)",
+        "name_en": "Chungjeongno",
         "lines": [
           "2",
           "5"
@@ -1023,7 +1023,7 @@
       "properties": {
         "id": "5907762741",
         "name_ko": "대림",
-        "name_en": "Daerim(Guro-gu Office)",
+        "name_en": "Daerim",
         "lines": [
           "2",
           "7"
@@ -1114,7 +1114,7 @@
       "properties": {
         "id": "6033314712",
         "name_ko": "서울대입구",
-        "name_en": "Seoul Nat'l University (Gwanak-gu Office)",
+        "name_en": "Seoul National University",
         "lines": [
           "2"
         ]
@@ -1261,7 +1261,7 @@
       "properties": {
         "id": "287525731",
         "name_ko": "삼성",
-        "name_en": "Samseong(World Trade Center Seoul)",
+        "name_en": "Samseong",
         "lines": [
           "2"
         ]
@@ -1316,7 +1316,7 @@
       "properties": {
         "id": "8337914284",
         "name_ko": "잠실",
-        "name_en": "Jamsil(Songpa-gu Office)",
+        "name_en": "Jamsil",
         "lines": [
           "2",
           "8"
@@ -1353,7 +1353,7 @@
       "properties": {
         "id": "5933687058",
         "name_ko": "강변",
-        "name_en": "Gangbyeon(Dongseoul Bus Terminal)",
+        "name_en": "Gangbyeon",
         "lines": [
           "2"
         ]
@@ -1371,7 +1371,7 @@
       "properties": {
         "id": "5933687294",
         "name_ko": "구의",
-        "name_en": "Guui(Gwangjin-gu Office)",
+        "name_en": "Guui",
         "lines": [
           "2"
         ]
@@ -1462,7 +1462,7 @@
       "properties": {
         "id": "5801559319",
         "name_ko": "왕십리",
-        "name_en": "Wangsimni(Seongdong-Gu Office)",
+        "name_en": "Wangsimni",
         "lines": [
           "2",
           "5",
@@ -1520,7 +1520,7 @@
       "properties": {
         "id": "5935738070",
         "name_ko": "동대문역사문화공원",
-        "name_en": "Dongdaemun History & Culture Park Station (DDP)",
+        "name_en": "Dongdaemun History & Culture Park",
         "lines": [
           "2",
           "4",
@@ -1540,7 +1540,7 @@
       "properties": {
         "id": "5349724970",
         "name_ko": "을지로4가",
-        "name_en": "Euljiro 4(sa)-ga",
+        "name_en": "Euljiro 4-ga",
         "lines": [
           "2",
           "5"
@@ -1559,7 +1559,7 @@
       "properties": {
         "id": "355172962",
         "name_ko": "을지로입구",
-        "name_en": "Euljiro 1(il)-ga (Industrial Bank of Korea)",
+        "name_en": "Euljiro 1-ga",
         "lines": [
           "2"
         ]
@@ -1669,7 +1669,7 @@
       "properties": {
         "id": "355173138",
         "name_ko": "수유",
-        "name_en": "Suyu (Gangbuk-gu Office)",
+        "name_en": "Suyu",
         "lines": [
           "4"
         ]
@@ -1705,7 +1705,7 @@
       "properties": {
         "id": "3835922764",
         "name_ko": "미아사거리",
-        "name_en": "Miasageori",
+        "name_en": "Mia Sageori",
         "lines": [
           "4"
         ]
@@ -1759,7 +1759,7 @@
       "properties": {
         "id": "5914829686",
         "name_ko": "한성대입구",
-        "name_en": "Hansung Univ. (Samseongyo)",
+        "name_en": "Hansung University",
         "lines": [
           "4"
         ]
@@ -1832,7 +1832,7 @@
       "properties": {
         "id": "3832931179",
         "name_ko": "회현",
-        "name_en": "Hoehyeon (Namdaemun Market)",
+        "name_en": "Hoehyeon",
         "lines": [
           "4"
         ]
@@ -1871,7 +1871,7 @@
       "properties": {
         "id": "3818491433",
         "name_ko": "숙대입구",
-        "name_en": "Sookmyung Women's Univ.",
+        "name_en": "Sookmyung Women's University",
         "lines": [
           "4"
         ]
@@ -1926,7 +1926,7 @@
       "properties": {
         "id": "2533971240",
         "name_ko": "이촌",
-        "name_en": "Ichon (National Museum of Korea)",
+        "name_en": "Ichon",
         "lines": [
           "4",
           "gyeongui"
@@ -1964,7 +1964,7 @@
       "properties": {
         "id": "6036160364",
         "name_ko": "총신대입구",
-        "name_en": "Chongsin Univ. (Isu)",
+        "name_en": "Chongshin University",
         "lines": [
           "4"
         ]
@@ -2018,7 +2018,7 @@
       "properties": {
         "id": "6035746726",
         "name_ko": "경마공원",
-        "name_en": "Seoul Racecourse park",
+        "name_en": "Seoul Racecourse Park",
         "lines": [
           "4"
         ]
@@ -2036,7 +2036,7 @@
       "properties": {
         "id": "6035746710",
         "name_ko": "대공원",
-        "name_en": "Seoul Grand park",
+        "name_en": "Seoul Grand Park",
         "lines": [
           "4"
         ]
@@ -2072,7 +2072,7 @@
       "properties": {
         "id": "6035746709",
         "name_ko": "정부과천청사",
-        "name_en": "Ansan Line",
+        "name_en": "Government Complex Gwacheon",
         "lines": [
           "4"
         ]
@@ -2442,7 +2442,7 @@
       "properties": {
         "id": "7287966330",
         "name_ko": "매교",
-        "name_en": "",
+        "name_en": "Maegyo",
         "lines": [
           "bundang"
         ]
@@ -2460,7 +2460,7 @@
       "properties": {
         "id": "7287966323",
         "name_ko": "수원시청",
-        "name_en": "",
+        "name_en": "Suwon City Hall",
         "lines": [
           "bundang"
         ]
@@ -2478,7 +2478,7 @@
       "properties": {
         "id": "7287966313",
         "name_ko": "매탄권선",
-        "name_en": "",
+        "name_en": "Maetan Gwonseon",
         "lines": [
           "bundang"
         ]
@@ -2496,7 +2496,7 @@
       "properties": {
         "id": "7287966302",
         "name_ko": "망포",
-        "name_en": "",
+        "name_en": "Mangpo",
         "lines": [
           "bundang"
         ]
@@ -2514,7 +2514,7 @@
       "properties": {
         "id": "7287966296",
         "name_ko": "영통",
-        "name_en": "",
+        "name_en": "Yeongtong",
         "lines": [
           "bundang"
         ]
@@ -2532,7 +2532,7 @@
       "properties": {
         "id": "7287966289",
         "name_ko": "청명",
-        "name_en": "",
+        "name_en": "Cheongmyeong",
         "lines": [
           "bundang"
         ]
@@ -2550,7 +2550,7 @@
       "properties": {
         "id": "7287965175",
         "name_ko": "상갈",
-        "name_en": "",
+        "name_en": "Sanggal",
         "lines": [
           "bundang"
         ]
@@ -2586,7 +2586,7 @@
       "properties": {
         "id": "7287965143",
         "name_ko": "신갈",
-        "name_en": "",
+        "name_en": "Singal",
         "lines": [
           "bundang"
         ]
@@ -2604,7 +2604,7 @@
       "properties": {
         "id": "7287965130",
         "name_ko": "구성",
-        "name_en": "",
+        "name_en": "Guseong",
         "lines": [
           "bundang"
         ]
@@ -2823,7 +2823,7 @@
       "properties": {
         "id": "1914136725",
         "name_ko": "가천대",
-        "name_en": "Gachon Univ.",
+        "name_en": "Gachon University",
         "lines": [
           "bundang"
         ]
@@ -2970,7 +2970,7 @@
       "properties": {
         "id": "6312484944",
         "name_ko": "압구정로데오",
-        "name_en": "Apgujungrodeo",
+        "name_en": "Apgujeong Rodeo",
         "lines": [
           "bundang"
         ]
@@ -2988,7 +2988,7 @@
       "properties": {
         "id": "4963715631",
         "name_ko": "서울숲",
-        "name_en": "Seoul-forest",
+        "name_en": "Seoul Forest",
         "lines": [
           "bundang"
         ]
@@ -3024,7 +3024,7 @@
       "properties": {
         "id": "3278844040",
         "name_ko": "김포공항",
-        "name_en": "Gimpo Int'l Airport",
+        "name_en": "Gimpo International Airport",
         "lines": [
           "5",
           "9",
@@ -3080,7 +3080,7 @@
       "properties": {
         "id": "1996406534",
         "name_ko": "마곡나루",
-        "name_en": "",
+        "name_en": "Magoknaru",
         "lines": [
           "9",
           "airport"
@@ -3189,7 +3189,7 @@
       "properties": {
         "id": "1994680522",
         "name_ko": "신목동",
-        "name_en": "Sinmokdong",
+        "name_en": "Sinmok-dong",
         "lines": [
           "9"
         ]
@@ -3243,7 +3243,7 @@
       "properties": {
         "id": "5917210895",
         "name_ko": "여의도",
-        "name_en": "",
+        "name_en": "Yeouido",
         "lines": [
           "5",
           "9"
@@ -3461,7 +3461,7 @@
       "properties": {
         "id": "6117347092",
         "name_ko": "삼전",
-        "name_en": "",
+        "name_en": "Samjeon",
         "lines": [
           "9"
         ]
@@ -3479,7 +3479,7 @@
       "properties": {
         "id": "6102706816",
         "name_ko": "석촌고분",
-        "name_en": "",
+        "name_en": "Seokchon Gobun",
         "lines": [
           "9"
         ]
@@ -3516,7 +3516,7 @@
       "properties": {
         "id": "6117347089",
         "name_ko": "송파나루",
-        "name_en": "",
+        "name_en": "Songpanaru",
         "lines": [
           "9"
         ]
@@ -3534,7 +3534,7 @@
       "properties": {
         "id": "6102706837",
         "name_ko": "한성백제",
-        "name_en": "",
+        "name_en": "Hanseong Baekje",
         "lines": [
           "9"
         ]
@@ -3552,7 +3552,7 @@
       "properties": {
         "id": "6102706374",
         "name_ko": "올림픽공원",
-        "name_en": "",
+        "name_en": "Olympic Park",
         "lines": [
           "5",
           "9"
@@ -3571,7 +3571,7 @@
       "properties": {
         "id": "6102706369",
         "name_ko": "둔촌오륜",
-        "name_en": "",
+        "name_en": "Dunchon Oryun",
         "lines": [
           "9"
         ]
@@ -3897,7 +3897,7 @@
       "properties": {
         "id": "355173593",
         "name_ko": "단대오거리",
-        "name_en": "Dandaeogeori",
+        "name_en": "Dandae Ogeori",
         "lines": [
           "8"
         ]
@@ -3951,7 +3951,7 @@
       "properties": {
         "id": "5919544837",
         "name_ko": "인천공항2터미널",
-        "name_en": "Incheon Airport Terminal 2",
+        "name_en": "Incheon International Airport Terminal 2",
         "lines": [
           "airport"
         ]
@@ -3969,7 +3969,7 @@
       "properties": {
         "id": "5919544824",
         "name_ko": "인천공항1터미널",
-        "name_en": "Incheon Int'l Airport Terminal 1",
+        "name_en": "Incheon International Airport Terminal 1",
         "lines": [
           "airport"
         ]
@@ -3987,7 +3987,7 @@
       "properties": {
         "id": "5919544815",
         "name_ko": "공항화물청사",
-        "name_en": "",
+        "name_en": "Airport Cargo Terminal",
         "lines": [
           "airport"
         ]
@@ -4005,7 +4005,7 @@
       "properties": {
         "id": "5919544811",
         "name_ko": "운서",
-        "name_en": "",
+        "name_en": "Unseo",
         "lines": [
           "airport"
         ]
@@ -4023,7 +4023,7 @@
       "properties": {
         "id": "5919544751",
         "name_ko": "영종",
-        "name_en": "",
+        "name_en": "Yeongjong",
         "lines": [
           "airport"
         ]
@@ -4041,7 +4041,7 @@
       "properties": {
         "id": "5919544740",
         "name_ko": "청라국제도시",
-        "name_en": "",
+        "name_en": "Cheongna International City",
         "lines": [
           "airport"
         ]
@@ -4059,7 +4059,7 @@
       "properties": {
         "id": "5919544723",
         "name_ko": "검암",
-        "name_en": "",
+        "name_en": "Geomam",
         "lines": [
           "airport"
         ]
@@ -4116,7 +4116,7 @@
       "properties": {
         "id": "5916874386",
         "name_ko": "응암",
-        "name_en": "",
+        "name_en": "Eungam",
         "lines": [
           "6"
         ]
@@ -4134,7 +4134,7 @@
       "properties": {
         "id": "355173383",
         "name_ko": "역촌",
-        "name_en": "",
+        "name_en": "Yeokchon",
         "lines": [
           "6"
         ]
@@ -4152,7 +4152,7 @@
       "properties": {
         "id": "6041674928",
         "name_ko": "독바위",
-        "name_en": "",
+        "name_en": "Dokbawi",
         "lines": [
           "6"
         ]
@@ -4170,7 +4170,7 @@
       "properties": {
         "id": "355173384",
         "name_ko": "구산",
-        "name_en": "",
+        "name_en": "Gusan",
         "lines": [
           "6"
         ]
@@ -4206,7 +4206,7 @@
       "properties": {
         "id": "355173381",
         "name_ko": "증산",
-        "name_en": "",
+        "name_en": "Jeungsan",
         "lines": [
           "6"
         ]
@@ -4243,7 +4243,7 @@
       "properties": {
         "id": "355173429",
         "name_ko": "월드컵경기장",
-        "name_en": "",
+        "name_en": "World Cup Stadium",
         "lines": [
           "6"
         ]
@@ -4261,7 +4261,7 @@
       "properties": {
         "id": "355173424",
         "name_ko": "마포구청",
-        "name_en": "",
+        "name_en": "Mapo-gu Office",
         "lines": [
           "6"
         ]
@@ -4279,7 +4279,7 @@
       "properties": {
         "id": "355173426",
         "name_ko": "망원",
-        "name_en": "",
+        "name_en": "Mangwon",
         "lines": [
           "6"
         ]
@@ -4297,7 +4297,7 @@
       "properties": {
         "id": "355173436",
         "name_ko": "상수",
-        "name_en": "",
+        "name_en": "Sangsu",
         "lines": [
           "6"
         ]
@@ -4315,7 +4315,7 @@
       "properties": {
         "id": "355173431",
         "name_ko": "광흥창",
-        "name_en": "",
+        "name_en": "Gwangheungchang",
         "lines": [
           "6"
         ]
@@ -4333,7 +4333,7 @@
       "properties": {
         "id": "355173433",
         "name_ko": "대흥",
-        "name_en": "",
+        "name_en": "Daeheung",
         "lines": [
           "6"
         ]
@@ -4370,7 +4370,7 @@
       "properties": {
         "id": "355173438",
         "name_ko": "녹사평",
-        "name_en": "",
+        "name_en": "Noksapyeong",
         "lines": [
           "6"
         ]
@@ -4388,7 +4388,7 @@
       "properties": {
         "id": "355173440",
         "name_ko": "이태원",
-        "name_en": "",
+        "name_en": "Itaewon",
         "lines": [
           "6"
         ]
@@ -4406,7 +4406,7 @@
       "properties": {
         "id": "355173448",
         "name_ko": "한강진",
-        "name_en": "",
+        "name_en": "Hangangjin",
         "lines": [
           "6"
         ]
@@ -4424,7 +4424,7 @@
       "properties": {
         "id": "355173451",
         "name_ko": "버티고개",
-        "name_en": "",
+        "name_en": "Beotigogae",
         "lines": [
           "6"
         ]
@@ -4442,7 +4442,7 @@
       "properties": {
         "id": "6039313640",
         "name_ko": "청구",
-        "name_en": "",
+        "name_en": "Cheonggu",
         "lines": [
           "5",
           "6"
@@ -4480,7 +4480,7 @@
       "properties": {
         "id": "355173402",
         "name_ko": "창신",
-        "name_en": "",
+        "name_en": "Changsin",
         "lines": [
           "6"
         ]
@@ -4516,7 +4516,7 @@
       "properties": {
         "id": "355173400",
         "name_ko": "안암",
-        "name_en": "",
+        "name_en": "Anam",
         "lines": [
           "6"
         ]
@@ -4534,7 +4534,7 @@
       "properties": {
         "id": "355173408",
         "name_ko": "고려대",
-        "name_en": "Korea Univ.",
+        "name_en": "Korea University",
         "lines": [
           "6"
         ]
@@ -4552,7 +4552,7 @@
       "properties": {
         "id": "355173406",
         "name_ko": "월곡",
-        "name_en": "",
+        "name_en": "Wolgok",
         "lines": [
           "6"
         ]
@@ -4570,7 +4570,7 @@
       "properties": {
         "id": "355173405",
         "name_ko": "상월곡",
-        "name_en": "",
+        "name_en": "Sangwolgok",
         "lines": [
           "6"
         ]
@@ -4588,7 +4588,7 @@
       "properties": {
         "id": "355173404",
         "name_ko": "돌곶이",
-        "name_en": "",
+        "name_en": "Dolgoji",
         "lines": [
           "6"
         ]
@@ -4625,7 +4625,7 @@
       "properties": {
         "id": "6041673025",
         "name_ko": "태릉입구",
-        "name_en": "",
+        "name_en": "Taereung",
         "lines": [
           "6",
           "7"
@@ -4644,7 +4644,7 @@
       "properties": {
         "id": "355173413",
         "name_ko": "화랑대",
-        "name_en": "",
+        "name_en": "Hwarangdae",
         "lines": [
           "6"
         ]
@@ -4699,7 +4699,7 @@
       "properties": {
         "id": "355172924",
         "name_ko": "용두",
-        "name_en": "",
+        "name_en": "Yongdu",
         "lines": [
           "2"
         ]
@@ -4717,7 +4717,7 @@
       "properties": {
         "id": "5694832466",
         "name_ko": "신답",
-        "name_en": "",
+        "name_en": "Sindap",
         "lines": [
           "2"
         ]
@@ -4735,7 +4735,7 @@
       "properties": {
         "id": "5856128334",
         "name_ko": "용답",
-        "name_en": "",
+        "name_en": "Yongdap",
         "lines": [
           "2"
         ]
@@ -4789,7 +4789,7 @@
       "properties": {
         "id": "6033364446",
         "name_ko": "신정네거리",
-        "name_en": "Sinjeongnegeori",
+        "name_en": "Sinjeong Negeori",
         "lines": [
           "2"
         ]
@@ -4826,7 +4826,7 @@
       "properties": {
         "id": "6039313057",
         "name_ko": "마천",
-        "name_en": "",
+        "name_en": "Macheon",
         "lines": [
           "5"
         ]
@@ -4844,7 +4844,7 @@
       "properties": {
         "id": "6039313046",
         "name_ko": "거여",
-        "name_en": "",
+        "name_en": "Geoyeo",
         "lines": [
           "5"
         ]
@@ -4862,7 +4862,7 @@
       "properties": {
         "id": "6039313049",
         "name_ko": "개롱",
-        "name_en": "",
+        "name_en": "Gaerong",
         "lines": [
           "5"
         ]
@@ -4880,7 +4880,7 @@
       "properties": {
         "id": "6039313053",
         "name_ko": "방이",
-        "name_en": "",
+        "name_en": "Bangi",
         "lines": [
           "5"
         ]
@@ -4898,7 +4898,7 @@
       "properties": {
         "id": "6039313073",
         "name_ko": "둔촌동",
-        "name_en": "",
+        "name_en": "Dunchon-dong",
         "lines": [
           "5"
         ]
@@ -4916,7 +4916,7 @@
       "properties": {
         "id": "6039313082",
         "name_ko": "강동",
-        "name_en": "",
+        "name_en": "Gangdong",
         "lines": [
           "5"
         ]
@@ -4970,7 +4970,7 @@
       "properties": {
         "id": "5915757377",
         "name_ko": "명일",
-        "name_en": "",
+        "name_en": "Myeongil",
         "lines": [
           "5"
         ]
@@ -4988,7 +4988,7 @@
       "properties": {
         "id": "355173312",
         "name_ko": "굽은다리",
-        "name_en": "",
+        "name_en": "Gubeundari",
         "lines": [
           "5"
         ]
@@ -5006,7 +5006,7 @@
       "properties": {
         "id": "355173323",
         "name_ko": "길동",
-        "name_en": "",
+        "name_en": "Gildong",
         "lines": [
           "5"
         ]
@@ -5024,7 +5024,7 @@
       "properties": {
         "id": "355173377",
         "name_ko": "광나루",
-        "name_en": "",
+        "name_en": "Gwangnaru",
         "lines": [
           "5"
         ]
@@ -5042,7 +5042,7 @@
       "properties": {
         "id": "355173375",
         "name_ko": "아차산",
-        "name_en": "",
+        "name_en": "Achasan",
         "lines": [
           "5"
         ]
@@ -5060,7 +5060,7 @@
       "properties": {
         "id": "6039313614",
         "name_ko": "군자",
-        "name_en": "",
+        "name_en": "Gunja",
         "lines": [
           "5",
           "7"
@@ -5079,7 +5079,7 @@
       "properties": {
         "id": "355173372",
         "name_ko": "장한평",
-        "name_en": "",
+        "name_en": "Janghanpyeong",
         "lines": [
           "5"
         ]
@@ -5097,7 +5097,7 @@
       "properties": {
         "id": "355173370",
         "name_ko": "답십리",
-        "name_en": "",
+        "name_en": "Dapsimni",
         "lines": [
           "5"
         ]
@@ -5115,7 +5115,7 @@
       "properties": {
         "id": "355173368",
         "name_ko": "마장",
-        "name_en": "",
+        "name_en": "Majang",
         "lines": [
           "5"
         ]
@@ -5133,7 +5133,7 @@
       "properties": {
         "id": "355173365",
         "name_ko": "행당",
-        "name_en": "",
+        "name_en": "Haengdang",
         "lines": [
           "5"
         ]
@@ -5151,7 +5151,7 @@
       "properties": {
         "id": "355173364",
         "name_ko": "신금호",
-        "name_en": "",
+        "name_en": "Singeumho",
         "lines": [
           "5"
         ]
@@ -5187,7 +5187,7 @@
       "properties": {
         "id": "355173360",
         "name_ko": "서대문",
-        "name_en": "",
+        "name_en": "Seodaemun",
         "lines": [
           "5"
         ]
@@ -5205,7 +5205,7 @@
       "properties": {
         "id": "3278844465",
         "name_ko": "애오개",
-        "name_en": "",
+        "name_en": "Aeogae",
         "lines": [
           "5"
         ]
@@ -5223,7 +5223,7 @@
       "properties": {
         "id": "353186877",
         "name_ko": "마포",
-        "name_en": "",
+        "name_en": "Mapo",
         "lines": [
           "5"
         ]
@@ -5241,7 +5241,7 @@
       "properties": {
         "id": "414684925",
         "name_ko": "여의나루",
-        "name_en": "",
+        "name_en": "Yeouinaru",
         "lines": [
           "5"
         ]
@@ -5278,7 +5278,7 @@
       "properties": {
         "id": "6039313681",
         "name_ko": "영등포시장",
-        "name_en": "",
+        "name_en": "Yeongdeungpo Market",
         "lines": [
           "5"
         ]
@@ -5477,7 +5477,7 @@
       "properties": {
         "id": "355173386",
         "name_ko": "방화",
-        "name_en": "",
+        "name_en": "Banghwa",
         "lines": [
           "5"
         ]
@@ -5622,7 +5622,7 @@
       "properties": {
         "id": "5889532072",
         "name_ko": "원덕",
-        "name_en": "",
+        "name_en": "Wondeok",
         "lines": [
           "gyeongui"
         ]
@@ -5640,7 +5640,7 @@
       "properties": {
         "id": "5889529470",
         "name_ko": "오빈",
-        "name_en": "",
+        "name_en": "Obin",
         "lines": [
           "gyeongui"
         ]
@@ -5676,7 +5676,7 @@
       "properties": {
         "id": "5889529441",
         "name_ko": "국수",
-        "name_en": "",
+        "name_en": "Guksu",
         "lines": [
           "gyeongui"
         ]
@@ -5694,7 +5694,7 @@
       "properties": {
         "id": "5889529431",
         "name_ko": "신원",
-        "name_en": "",
+        "name_en": "Sinwon",
         "lines": [
           "gyeongui"
         ]
@@ -5712,7 +5712,7 @@
       "properties": {
         "id": "5890164147",
         "name_ko": "양수",
-        "name_en": "",
+        "name_en": "Yangsu",
         "lines": [
           "gyeongui"
         ]
@@ -5730,7 +5730,7 @@
       "properties": {
         "id": "5890164134",
         "name_ko": "운길산",
-        "name_en": "",
+        "name_en": "Ungilsan",
         "lines": [
           "gyeongui"
         ]
@@ -5748,7 +5748,7 @@
       "properties": {
         "id": "5890164130",
         "name_ko": "팔당",
-        "name_en": "",
+        "name_en": "Paldang",
         "lines": [
           "gyeongui"
         ]
@@ -5766,7 +5766,7 @@
       "properties": {
         "id": "5890637513",
         "name_ko": "도심",
-        "name_en": "",
+        "name_en": "Dosim",
         "lines": [
           "gyeongui"
         ]
@@ -5784,7 +5784,7 @@
       "properties": {
         "id": "5890637492",
         "name_ko": "덕소",
-        "name_en": "",
+        "name_en": "Deokso",
         "lines": [
           "gyeongui"
         ]
@@ -5802,7 +5802,7 @@
       "properties": {
         "id": "4063596085",
         "name_ko": "양정",
-        "name_en": "",
+        "name_en": "Yangjeong",
         "lines": [
           "gyeongui"
         ]
@@ -5838,7 +5838,7 @@
       "properties": {
         "id": "5890637453",
         "name_ko": "양원",
-        "name_en": "",
+        "name_en": "Yangwon",
         "lines": [
           "gyeongui"
         ]
@@ -5874,7 +5874,7 @@
       "properties": {
         "id": "5890637419",
         "name_ko": "상봉",
-        "name_en": "",
+        "name_en": "Sangbong",
         "lines": [
           "7",
           "gyeongui"
@@ -5893,7 +5893,7 @@
       "properties": {
         "id": "5890637409",
         "name_ko": "중랑",
-        "name_en": "",
+        "name_en": "Jungnang",
         "lines": [
           "gyeongui"
         ]
@@ -5930,7 +5930,7 @@
       "properties": {
         "id": "8390160499",
         "name_ko": "청량리",
-        "name_en": "Cheongnyangni (University of Seoul)",
+        "name_en": "Cheongnyangni",
         "lines": [
           "1",
           "bundang",
@@ -5950,7 +5950,7 @@
       "properties": {
         "id": "5890636978",
         "name_ko": "응봉",
-        "name_en": "",
+        "name_en": "Eungbong",
         "lines": [
           "gyeongui"
         ]
@@ -5968,7 +5968,7 @@
       "properties": {
         "id": "5893030216",
         "name_ko": "한남",
-        "name_en": "",
+        "name_en": "Hannam",
         "lines": [
           "gyeongui"
         ]
@@ -5986,7 +5986,7 @@
       "properties": {
         "id": "5893030217",
         "name_ko": "서빙고",
-        "name_en": "",
+        "name_en": "Seobinggo",
         "lines": [
           "gyeongui"
         ]
@@ -6023,7 +6023,7 @@
       "properties": {
         "id": "4704699992",
         "name_ko": "서강대",
-        "name_en": "Sogang Univ.",
+        "name_en": "Sogang University",
         "lines": [
           "gyeongui"
         ]
@@ -6041,7 +6041,7 @@
       "properties": {
         "id": "5893030243",
         "name_ko": "가좌",
-        "name_en": "",
+        "name_en": "Gajwa",
         "lines": [
           "gyeongui"
         ]
@@ -6077,7 +6077,7 @@
       "properties": {
         "id": "5891334845",
         "name_ko": "한국항공대",
-        "name_en": "Korea Aerospace Univ.",
+        "name_en": "Korea Aerospace University",
         "lines": [
           "gyeongui"
         ]
@@ -6095,7 +6095,7 @@
       "properties": {
         "id": "5893288218",
         "name_ko": "강매",
-        "name_en": "",
+        "name_en": "Gangmae",
         "lines": [
           "gyeongui"
         ]
@@ -6113,7 +6113,7 @@
       "properties": {
         "id": "8334213085",
         "name_ko": "행신",
-        "name_en": "",
+        "name_en": "Haengsin",
         "lines": [
           "gyeongui"
         ]
@@ -6131,7 +6131,7 @@
       "properties": {
         "id": "8334213103",
         "name_ko": "능곡",
-        "name_en": "",
+        "name_en": "Neunggok",
         "lines": [
           "gyeongui"
         ]
@@ -6203,7 +6203,7 @@
       "properties": {
         "id": "5891337069",
         "name_ko": "탄현",
-        "name_en": "",
+        "name_en": "Tanhyeon",
         "lines": [
           "gyeongui"
         ]
@@ -6257,7 +6257,7 @@
       "properties": {
         "id": "4045715667",
         "name_ko": "금릉",
-        "name_en": "",
+        "name_en": "Geumneung",
         "lines": [
           "gyeongui"
         ]
@@ -6275,7 +6275,7 @@
       "properties": {
         "id": "5890815212",
         "name_ko": "금촌",
-        "name_en": "",
+        "name_en": "Geumchon",
         "lines": [
           "gyeongui"
         ]
@@ -6293,7 +6293,7 @@
       "properties": {
         "id": "5890815220",
         "name_ko": "월롱",
-        "name_en": "",
+        "name_en": "Wollong",
         "lines": [
           "gyeongui"
         ]
@@ -6311,7 +6311,7 @@
       "properties": {
         "id": "5890815486",
         "name_ko": "파주",
-        "name_en": "",
+        "name_en": "Paju",
         "lines": [
           "gyeongui"
         ]
@@ -6329,7 +6329,7 @@
       "properties": {
         "id": "5890815514",
         "name_ko": "문산",
-        "name_en": "",
+        "name_en": "Munsan",
         "lines": [
           "gyeongui"
         ]
@@ -6619,7 +6619,7 @@
       "properties": {
         "id": "4937987051",
         "name_ko": "동두천중앙",
-        "name_en": "Dongducheonjungang (Shinhan University Campus 2)",
+        "name_en": "Dongducheon Jungang",
         "lines": [
           "1"
         ]
@@ -6655,7 +6655,7 @@
       "properties": {
         "id": "4939679248",
         "name_ko": "덕정",
-        "name_en": "Deokjeong (Seojeong College)",
+        "name_en": "Deokjeong",
         "lines": [
           "1"
         ]
@@ -6781,7 +6781,7 @@
       "properties": {
         "id": "4520040946",
         "name_ko": "망월사",
-        "name_en": "Mangwolsa (Shinhan University)",
+        "name_en": "Mangwolsa",
         "lines": [
           "1"
         ]
@@ -6836,7 +6836,7 @@
       "properties": {
         "id": "5899116539",
         "name_ko": "방학",
-        "name_en": "Banghak (Dobong-gu Office)",
+        "name_en": "Banghak",
         "lines": [
           "1"
         ]
@@ -6872,7 +6872,7 @@
       "properties": {
         "id": "5899214148",
         "name_ko": "월계",
-        "name_en": "Wolgye (Induk University)",
+        "name_en": "Wolgye",
         "lines": [
           "1"
         ]
@@ -6908,7 +6908,7 @@
       "properties": {
         "id": "4246459937",
         "name_ko": "신이문",
-        "name_en": "Sinimun (Korea National University of Arts)",
+        "name_en": "Sinimun",
         "lines": [
           "1"
         ]
@@ -6944,7 +6944,7 @@
       "properties": {
         "id": "7611776393",
         "name_ko": "제기동",
-        "name_en": "Jegidong",
+        "name_en": "Jegi-dong",
         "lines": [
           "1"
         ]
@@ -6962,7 +6962,7 @@
       "properties": {
         "id": "355172742",
         "name_ko": "종로5가",
-        "name_en": "Jongno 5(o)-ga",
+        "name_en": "Jongno 5-ga",
         "lines": [
           "1"
         ]
@@ -8116,7 +8116,7 @@
       "properties": {
         "id": "6046634697",
         "name_ko": "수락산",
-        "name_en": "",
+        "name_en": "Suraksan",
         "lines": [
           "7"
         ]
@@ -8134,7 +8134,7 @@
       "properties": {
         "id": "6046634703",
         "name_ko": "마들",
-        "name_en": "",
+        "name_en": "Madeul",
         "lines": [
           "7"
         ]
@@ -8152,7 +8152,7 @@
       "properties": {
         "id": "2111825348",
         "name_ko": "중계",
-        "name_en": "",
+        "name_en": "Junggye",
         "lines": [
           "7"
         ]
@@ -8170,7 +8170,7 @@
       "properties": {
         "id": "6046634707",
         "name_ko": "하계",
-        "name_en": "",
+        "name_en": "Hagye",
         "lines": [
           "7"
         ]
@@ -8188,7 +8188,7 @@
       "properties": {
         "id": "6046634708",
         "name_ko": "공릉",
-        "name_en": "",
+        "name_en": "Gongneung",
         "lines": [
           "7"
         ]
@@ -8206,7 +8206,7 @@
       "properties": {
         "id": "6046634710",
         "name_ko": "먹골",
-        "name_en": "",
+        "name_en": "Meokgol",
         "lines": [
           "7"
         ]
@@ -8224,7 +8224,7 @@
       "properties": {
         "id": "4706526694",
         "name_ko": "중화",
-        "name_en": "",
+        "name_en": "Junghwa",
         "lines": [
           "7"
         ]
@@ -8242,7 +8242,7 @@
       "properties": {
         "id": "6046634712",
         "name_ko": "면목",
-        "name_en": "",
+        "name_en": "Myeonmok",
         "lines": [
           "7"
         ]
@@ -8260,7 +8260,7 @@
       "properties": {
         "id": "6046634739",
         "name_ko": "사가정",
-        "name_en": "",
+        "name_en": "Sagajeong",
         "lines": [
           "7"
         ]
@@ -8278,7 +8278,7 @@
       "properties": {
         "id": "3823777524",
         "name_ko": "용마산",
-        "name_en": "",
+        "name_en": "Yongmasan",
         "lines": [
           "7"
         ]
@@ -8296,7 +8296,7 @@
       "properties": {
         "id": "6046634750",
         "name_ko": "중곡",
-        "name_en": "",
+        "name_en": "Junggok",
         "lines": [
           "7"
         ]
@@ -8314,7 +8314,7 @@
       "properties": {
         "id": "6046633859",
         "name_ko": "어린이대공원",
-        "name_en": "",
+        "name_en": "Children's Grand Park",
         "lines": [
           "7"
         ]
@@ -8350,7 +8350,7 @@
       "properties": {
         "id": "2111924741",
         "name_ko": "청담",
-        "name_en": "",
+        "name_en": "Cheongdam",
         "lines": [
           "7"
         ]
@@ -8368,7 +8368,7 @@
       "properties": {
         "id": "436832405",
         "name_ko": "학동",
-        "name_en": "",
+        "name_en": "Hakdong",
         "lines": [
           "7"
         ]
@@ -8386,7 +8386,7 @@
       "properties": {
         "id": "2279487866",
         "name_ko": "반포",
-        "name_en": "",
+        "name_en": "Banpo",
         "lines": [
           "7"
         ]
@@ -8440,7 +8440,7 @@
       "properties": {
         "id": "6048955158",
         "name_ko": "남성",
-        "name_en": "",
+        "name_en": "Namseong",
         "lines": [
           "7"
         ]
@@ -8458,7 +8458,7 @@
       "properties": {
         "id": "6048955148",
         "name_ko": "숭실대입구",
-        "name_en": "",
+        "name_en": "Soongsil University",
         "lines": [
           "7"
         ]
@@ -8476,7 +8476,7 @@
       "properties": {
         "id": "6048955147",
         "name_ko": "상도",
-        "name_en": "",
+        "name_en": "Sangdo",
         "lines": [
           "7"
         ]
@@ -8494,7 +8494,7 @@
       "properties": {
         "id": "6048955124",
         "name_ko": "장승배기",
-        "name_en": "",
+        "name_en": "Jangseungbaegi",
         "lines": [
           "7"
         ]
@@ -8512,7 +8512,7 @@
       "properties": {
         "id": "6048955112",
         "name_ko": "신대방삼거리",
-        "name_en": "",
+        "name_en": "Sindaebang Samgeori",
         "lines": [
           "7"
         ]
@@ -8530,7 +8530,7 @@
       "properties": {
         "id": "6048955111",
         "name_ko": "보라매",
-        "name_en": "",
+        "name_en": "Boramae",
         "lines": [
           "7"
         ]
@@ -8548,7 +8548,7 @@
       "properties": {
         "id": "6048955110",
         "name_ko": "신풍",
-        "name_en": "",
+        "name_en": "Sinpung",
         "lines": [
           "7"
         ]
@@ -8566,7 +8566,7 @@
       "properties": {
         "id": "6048953571",
         "name_ko": "남구로",
-        "name_en": "",
+        "name_en": "Namguro",
         "lines": [
           "7"
         ]
@@ -8602,7 +8602,7 @@
       "properties": {
         "id": "6048955086",
         "name_ko": "광명사거리",
-        "name_en": "",
+        "name_en": "Gwangmyeong Sageori",
         "lines": [
           "7"
         ]
@@ -8620,7 +8620,7 @@
       "properties": {
         "id": "6050655875",
         "name_ko": "천왕",
-        "name_en": "",
+        "name_en": "Cheonwang",
         "lines": [
           "7"
         ]
@@ -8746,7 +8746,7 @@
       "properties": {
         "id": "5907965096",
         "name_ko": "달월",
-        "name_en": "",
+        "name_en": "Dalwol",
         "lines": [
           "bundang"
         ]
@@ -8800,7 +8800,7 @@
       "properties": {
         "id": "5907965001",
         "name_ko": "인천논현",
-        "name_en": "",
+        "name_en": "Incheon Nonhyeon",
         "lines": [
           "bundang"
         ]
@@ -8980,7 +8980,7 @@
       "properties": {
         "id": "8566458089",
         "name_ko": "하남시청",
-        "name_en": "Hanam City Hall (Deokpung·Sinjang)",
+        "name_en": "Hanam City Hall",
         "lines": [
           "5"
         ]
@@ -8998,7 +8998,7 @@
       "properties": {
         "id": "7798230510",
         "name_ko": "하남풍산",
-        "name_en": "",
+        "name_en": "Hanam Pungsan",
         "lines": [
           "5"
         ]
@@ -9052,7 +9052,7 @@
       "properties": {
         "id": "6050655863",
         "name_ko": "까치울",
-        "name_en": "",
+        "name_en": "Kkachiul",
         "lines": [
           "7"
         ]
@@ -9070,7 +9070,7 @@
       "properties": {
         "id": "6050655851",
         "name_ko": "부천종합운동장",
-        "name_en": "",
+        "name_en": "Bucheon Sports Complex",
         "lines": [
           "7"
         ]
@@ -9088,7 +9088,7 @@
       "properties": {
         "id": "6050655850",
         "name_ko": "춘의",
-        "name_en": "",
+        "name_en": "Chunui",
         "lines": [
           "7"
         ]
@@ -9106,7 +9106,7 @@
       "properties": {
         "id": "6050655845",
         "name_ko": "신중동",
-        "name_en": "",
+        "name_en": "Sinjung-dong",
         "lines": [
           "7"
         ]
@@ -9124,7 +9124,7 @@
       "properties": {
         "id": "6050654945",
         "name_ko": "부천시청",
-        "name_en": "",
+        "name_en": "Bucheon City Hall",
         "lines": [
           "7"
         ]
@@ -9142,7 +9142,7 @@
       "properties": {
         "id": "6050654943",
         "name_ko": "상동",
-        "name_en": "",
+        "name_en": "Sangdong",
         "lines": [
           "7"
         ]
@@ -9160,7 +9160,7 @@
       "properties": {
         "id": "6050654948",
         "name_ko": "삼산체육관",
-        "name_en": "",
+        "name_en": "Samsan Gymnasium",
         "lines": [
           "7"
         ]
@@ -9178,7 +9178,7 @@
       "properties": {
         "id": "2360117049",
         "name_ko": "굴포천",
-        "name_en": "",
+        "name_en": "Gulpocheon",
         "lines": [
           "7"
         ]

@@ -23,7 +23,9 @@ def _set_applied_search(name, district, library_id=None, is_suggestion=False):
     st.session_state["applied_district"] = district
     st.session_state["selected_library_id"] = library_id
     st.session_state["suggestion_selected"] = is_suggestion
-    st.session_state["ignore_map_click_once"] = True
+    st.session_state["map_marker_focused"] = False
+    st.session_state["map_revision"] += 1
+    st.session_state.pop("map_view", None)
 def apply_search():
     _set_applied_search(
         st.session_state.get("search_name", "").strip(),
@@ -36,6 +38,8 @@ def clear_suggestion_choice():
     clear_route()
     st.session_state["selected_library_id"] = None
     st.session_state["suggestion_selected"] = False
+    st.session_state["map_marker_focused"] = False
+    st.session_state["map_revision"] += 1
 
 def show_title():
     st.markdown(
@@ -120,13 +124,17 @@ def show_summary(total_libraries, total_districts, found_count):
     district_column.metric("Districts", total_districts)
     found_column.metric("Libraries found", found_count)
 
-def build_library_map(libraries, route=None, origin=None):
+def build_library_map(libraries, route=None, origin=None, view=None):
     center = (
         [libraries["Latitude"].mean(), libraries["Longitude"].mean()]
         if not libraries.empty else [37.5665, 126.9780]
     )
+    zoom = 14 if len(libraries) == 1 else 11
+    if view:
+        center = [view["center"]["lat"], view["center"]["lng"]]
+        zoom = view["zoom"]
     library_map = folium.Map(
-        location=center, zoom_start=14 if len(libraries) == 1 else 11,
+        location=center, zoom_start=zoom,
         attr=('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · '
               '<a href="https://routing.openstreetmap.de/about.html">OSRM / FOSSGIS</a> · '
               '<a href="https://www.openstreetmap.org/fixthemap">Fix the map</a>'),
@@ -137,6 +145,7 @@ def build_library_map(libraries, route=None, origin=None):
             location=[row["Latitude"], row["Longitude"]],
             tooltip=html.escape(str(row["Library_Name"])),
             icon=folium.Icon(color="darkred"),
+            bubbling_mouse_events=False,
         ).add_to(library_map)
     if origin:
         folium.Marker(origin, tooltip="Starting point", icon=folium.Icon(color="green", icon="user")).add_to(library_map)
@@ -147,26 +156,26 @@ def build_library_map(libraries, route=None, origin=None):
             tooltip="Walking", interactive=False,
         ).add_to(library_map)
         library_map.fit_bounds(bounds, padding=(35, 35), max_zoom=16)
-    elif origin and len(libraries) == 1:
+    elif origin and len(libraries) == 1 and not view:
         library_map.fit_bounds([origin, center], padding=(35, 35), max_zoom=16)
     return library_map
 
 
-def show_map(container, libraries, route=None):
+def show_map(container, libraries, route=None, *, revision=0, view=None):
     with container:
         st.subheader("Library Map")
 
         if libraries.empty:
             st.info("No libraries match the search. Try another name or district.")
 
-        library_map = build_library_map(libraries, route, st.session_state.get("route_origin"))
+        library_map = build_library_map(libraries, route, st.session_state.get("route_origin"), view)
 
         result = st_folium(
             library_map,
             height=500,
             use_container_width=True,
-            returned_objects=["last_object_clicked", "last_object_clicked_count"],
-            key="library_map",
+            returned_objects=["last_clicked", "last_object_clicked", "last_object_clicked_tooltip", "center", "zoom"],
+            key=f"library_map_{revision}",
         )
     return result or {}
 def show_library_information(row, container):

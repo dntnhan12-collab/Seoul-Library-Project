@@ -1,6 +1,6 @@
 # Seoul Public Library Explorer
 
-An interactive Streamlit dashboard for exploring Seoul's public libraries. Search libraries by name or district, view their locations on a map, inspect library details, compare library counts by district, and see summary statistics.
+An interactive Streamlit dashboard for exploring Seoul's public libraries. Search by name or district, inspect library details, compare district counts, and find directions from your current location. Walking routes appear on the dashboard; bus and subway journeys open directly in Naver Map's website.
 
 The public dashboard is live at [Seoul Public Library Explorer](https://seoul-library-explorer.streamlit.app/). Its source code is in the public [Seoul-Library-Project GitHub repository](https://github.com/dntnhan12-collab/Seoul-Library-Project).
 
@@ -14,28 +14,22 @@ The public dashboard is live at [Seoul Public Library Explorer](https://seoul-li
    cd Seoul-Library-Project
    ```
 
-3. Create and activate a virtual environment, then install the dependencies:
+3. Create a virtual environment and install the dependencies (PowerShell / VS Code terminal):
 
    ```powershell
    python -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   pip install -r requirements.txt
-   ```
-
-   If PowerShell blocks activation, allow it for the current terminal only, then activate again:
-
-   ```powershell
-   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-   .\.venv\Scripts\Activate.ps1
+   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
    ```
 
 4. Start Streamlit:
 
    ```powershell
-   streamlit run main.py
+   .\.venv\Scripts\python.exe -m streamlit run main.py
    ```
 
    Streamlit prints a local address (usually `http://localhost:8501`) in the terminal. Open that address in a browser.
+
+   On macOS/Linux, use `.venv/bin/python` instead of `.\.venv\Scripts\python.exe` (and `python3` to create the environment). Streamlit 1.64.0 or later is required.
 
 ## Data used
 
@@ -48,8 +42,11 @@ The project uses the Seoul Metropolitan Government dataset **Seoul Public Librar
 - `main.py` coordinates the data and UI: it loads cleaned rows, creates the manager, applies search and district filters, updates map selection, and requests summary/chart results.
 - `services/data_manager.py` reads the CSV, converts latitude and longitude to numbers, and removes rows missing required values. `services/search.py` provides keyword search and district filtering. `services/analyzer.py` calculates library and district counts.
 - `app.py` renders the Streamlit interface, map, library information, summary metrics, and district chart.
+- `services/routing.py` validates coordinates, retrieves walking routes from OSRM, and builds browser links for Naver transit directions.
+- `location_control.py` provides the browser location button. It requests permission only when clicked, then starts walking directions or navigates to Naver with both endpoints.
+- `tests/test_routing.py` checks route response handling, coordinate validation, error messages, and preservation of the starting point in Naver links.
 
-In short: CSV → cleaned DataFrame → `LibraryManager` → `Library` objects → search/filter → map, details, metrics, and chart.
+Data flow: CSV → cleaned DataFrame → `LibraryManager` → `Library` objects → search/filter → map, details, metrics, and chart.
 
 ## SOLID principles demonstrated
 
@@ -64,16 +61,26 @@ This project focuses on the two SOLID principles most clearly represented in its
 - Filter by district, or use **Find** and **Reset** to apply or clear a search.
 - Browse library locations on an interactive map and click a marker to inspect a library.
 - View total library and district counts, result count, library details, and a bar chart of libraries by district.
-- Select a library and set the starting point with **Use my current location** or **Choose starting point on map**.
-- Choose **Walking**, then **Show route** to draw the walking route on this website with distance and estimated time.
-- Choose **Bus / subway (Naver Map)** to open Naver's app or website. Both links carry the same starting coordinates and selected library. Choose the preferred transit route in Naver Map.
+- The **Directions** controls appear directly below the map. Select a library and travel mode, then press **Find route from my location**.
+- **Walking** gets your location and draws the route directly on this map, with distance and estimated time. Only the user marker, selected library, and route are displayed while a route is active. **Clear route** restores the library search results.
+- **Bus / subway (Naver Map)** gets your location and navigates directly to Naver in the same browser tab with both endpoints filled in. No second button or mobile app is required.
 
 ## Directions
 
-No API key or additional CSV is required. Walking uses the [FOSSGIS OSRM foot service](https://routing.openstreetmap.de/about.html), intended for light use. Requests are limited to one per second per app process. The origin and route stay in the user's Streamlit session, not in project files or shared caches. Changing travel modes keeps the starting point and clears the old route.
+No API key or additional CSV is required. Walking uses the [FOSSGIS OSRM foot service](https://routing.openstreetmap.de/about.html), intended for light use. Requests are limited to one per second per app process.
 
-Location requires permission and HTTPS or localhost. Alternatively choose a point on the map. Show route shares endpoints with OSRM/FOSSGIS; opening Naver shares endpoints with Naver. The transferred origin is a snapshot, not continuous GPS tracking.
+Location requires permission and HTTPS or localhost. The walking action shares endpoints with OSRM/FOSSGIS; the transit action shares endpoints with Naver. If location access fails, the app reports the error without opening Naver. The transferred location is a snapshot, not continuous GPS tracking. Browser shortcuts may need updating if Naver changes its URL format.
 
-Bus and subway routing takes place in Naver; ODsay is no longer used. App links require Naver Map installed. Browser shortcuts prefill both endpoints and may need updating if Naver changes its URL format.
+To refresh your location or recalculate a walking route, press **Find route from my location** again. Distances and times describe the route as calculated, not live progress. The app does not automatically reroute or draw bus/subway lines on the dashboard. GPS accuracy depends on the device and browser; a phone usually provides better positioning than a desktop computer.
 
-Run checks with `python -m unittest discover -s tests -v`.
+Library details are rendered as escaped text with wrapping to preserve spacing and special characters. Missing spaces in the CSV's affected closed-day descriptions have been corrected.
+
+## Validation
+
+Run the automated routing checks without calling external services:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+For a manual check, select a library, choose **Walking**, allow location access, and confirm the route and two markers appear. Then select **Bus / subway (Naver Map)** and press the same button to confirm Naver opens with the starting point and destination. Browser location and navigation require a browser check beyond the automated tests.

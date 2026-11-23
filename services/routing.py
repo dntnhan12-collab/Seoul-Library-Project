@@ -1,11 +1,11 @@
-"""Walking routes in WGS84."""
+"""Walking routes and browser links for Naver transit directions."""
 
 import json
 import math
 import threading
 import time
 from urllib.error import URLError
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
 
@@ -67,9 +67,19 @@ def walking_route(start, end):
     except (KeyError, IndexError, TypeError, ValueError):
         raise RoutingError("The service returned an incomplete walking route. Please try again.") from None
     return {
-        "segments": [{"points": points, "mode": "walk", "label": "Walking"}],
+        "points": points,
         "distance": distance,
         "duration": duration,
-        "steps": [f"Walk to the library ({distance / 1000:.2f} km)."],
-        "warnings": [],
     }
+
+
+def naver_browser_url(library, origin=None):
+    latitude, longitude = coordinates(library.latitude, library.longitude)
+    parameters = {
+        "elng": longitude, "elat": latitude, "etext": library.name,
+        "menu": "route", "pathType": 1,
+    }
+    if origin is not None:
+        lat, lon = coordinates(*origin)
+        parameters.update(slat=lat, slng=lon, stext="Starting point")
+    return "https://map.naver.com/index.nhn?" + urlencode(parameters, quote_via=quote)

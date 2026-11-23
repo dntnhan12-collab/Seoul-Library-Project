@@ -5,23 +5,27 @@ import streamlit as st
 
 _location_button = st.components.v2.component(
     "library_location",
-    html='<button type="button">Use my current location</button><p role="status" aria-live="polite"></p>',
+    html='<button type="button" title="Get your location and find a route. Walking endpoints are sent to OSRM/FOSSGIS.">Find route from my location</button><p role="status" aria-live="polite"></p>',
     css="""
         button { width:100%; padding:0.55rem; border:1px solid #E8D8BD;
-            border-radius:8px; background:var(--st-background-color, white);
-            color:var(--st-text-color, #432818); font:inherit; cursor:pointer; }
+            border-radius:8px; background:var(--st-primary-color, #6F1D1B);
+            color:white; font:inherit; cursor:pointer; }
         button:disabled { opacity:0.6; cursor:wait; }
         button:focus-visible { outline:2px solid #6F1D1B; outline-offset:2px; }
         p { margin:0.4rem 0; font-size:0.85rem; color:var(--st-text-color, #432818); }
+        p:empty { display:none; }
     """,
     js="""
-        export default function({parentElement, setTriggerValue}) {
+        export default function({parentElement, setTriggerValue, data}) {
             const button = parentElement.querySelector('button');
             const status = parentElement.querySelector('[role="status"]');
+            button.title = data?.browser_url
+                ? 'Get your location and open Naver in this browser with both endpoints.'
+                : 'Get your location and find a walking route using OSRM/FOSSGIS.';
             let active = true;
             button.onclick = () => {
                 if (!window.isSecureContext || !navigator.geolocation) {
-                    status.textContent = 'Location requires HTTPS or localhost. You can choose a starting point on the map.';
+                    status.textContent = 'Location requires HTTPS or localhost.';
                     return;
                 }
                 button.disabled = true;
@@ -29,18 +33,31 @@ _location_button = st.components.v2.component(
                 navigator.geolocation.getCurrentPosition(position => {
                     if (!active) return;
                     button.disabled = false;
-                    status.textContent = 'Location received.';
+                    status.textContent = '';
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)
+                        || latitude < 33 || latitude > 39 || longitude < 124 || longitude > 132) {
+                        status.textContent = 'Your location must be in South Korea to find a route.';
+                        return;
+                    }
                     setTriggerValue('position', {
                         latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        accuracy: position.coords.accuracy
+                        longitude: position.coords.longitude
                     });
+                    if (data?.browser_url) {
+                        const url = new URL(data.browser_url);
+                        url.searchParams.set('slat', String(latitude));
+                        url.searchParams.set('slng', String(longitude));
+                        url.searchParams.set('stext', 'Starting point');
+                        window.location.assign(url.toString());
+                    }
                 }, error => {
                     if (!active) return;
                     button.disabled = false;
                     status.textContent = error.code === 1
-                        ? 'Location permission was denied. Choose your starting point on the map.'
-                        : 'Could not get your location. Try again or choose a starting point on the map.';
+                        ? 'Location permission was denied. Enable location access in your browser and try again.'
+                        : 'Could not get your location. Check location services and try again.';
                 }, {enableHighAccuracy:true, timeout:12000, maximumAge:60000});
             };
             return () => { active = false; button.onclick = null; };
@@ -49,5 +66,8 @@ _location_button = st.components.v2.component(
 )
 
 
-def location_button(on_position_change):
-    return _location_button(key="route_location", on_position_change=on_position_change)
+def location_button(on_position_change, browser_url=None):
+    return _location_button(
+        key="route_location", data={"browser_url": browser_url},
+        on_position_change=on_position_change,
+    )

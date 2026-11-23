@@ -1,13 +1,13 @@
 import html
 import math
+from urllib.parse import urlsplit
 
 import altair as alt
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
 from models.library import Library
-from services.directions import naver_directions_links
-from services.routing import ROUTE_MODES, RoutingError, coordinates, walking_route
+from services.routing import ROUTE_MODES, RoutingError, coordinates, naver_browser_url, walking_route
 from location_control import location_button
 
 def clear_search():
@@ -19,7 +19,6 @@ def clear_search():
 
 def _set_applied_search(name, district, library_id=None, is_suggestion=False):
     clear_route()
-    st.session_state["pick_route_origin"] = False
     st.session_state["applied_name"] = name
     st.session_state["applied_district"] = district
     st.session_state["selected_library_id"] = library_id
@@ -126,7 +125,12 @@ def build_library_map(libraries, route=None, origin=None):
         [libraries["Latitude"].mean(), libraries["Longitude"].mean()]
         if not libraries.empty else [37.5665, 126.9780]
     )
-    library_map = folium.Map(location=center, zoom_start=14 if len(libraries) == 1 else 11)
+    library_map = folium.Map(
+        location=center, zoom_start=14 if len(libraries) == 1 else 11,
+        attr=('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · '
+              '<a href="https://routing.openstreetmap.de/about.html">OSRM / FOSSGIS</a> · '
+              '<a href="https://www.openstreetmap.org/fixthemap">Fix the map</a>'),
+    )
     folium.plugins.LocateControl(position="topleft", auto_start=False).add_to(library_map)
     for _, row in libraries.iterrows():
         folium.Marker(
@@ -137,17 +141,11 @@ def build_library_map(libraries, route=None, origin=None):
     if origin:
         folium.Marker(origin, tooltip="Starting point", icon=folium.Icon(color="green", icon="user")).add_to(library_map)
     if route:
-        colors = {"walk": "#2563EB", "bus": "#16A34A", "subway": "#9333EA"}
-        bounds = [origin, route["destination"]]
-        for segment in route["segments"]:
-            folium.PolyLine(
-                segment["points"], color=colors[segment["mode"]], weight=6, opacity=0.9,
-                tooltip=html.escape(segment["label"]), interactive=False,
-            ).add_to(library_map)
-            bounds.extend(segment["points"])
-        for stop in route.get("stops", []):
-            folium.CircleMarker(stop["point"], radius=5, color="#432818", fill=True,
-                                tooltip=html.escape(stop["name"]), bubbling_mouse_events=False).add_to(library_map)
+        bounds = [origin, route["destination"], *route["points"]]
+        folium.PolyLine(
+            route["points"], color="#2563EB", weight=6, opacity=0.9,
+            tooltip="Walking", interactive=False,
+        ).add_to(library_map)
         library_map.fit_bounds(bounds, padding=(35, 35), max_zoom=16)
     elif origin and len(libraries) == 1:
         library_map.fit_bounds([origin, center], padding=(35, 35), max_zoom=16)
@@ -161,24 +159,14 @@ def show_map(container, libraries, route=None):
         if libraries.empty:
             st.info("No libraries match the search. Try another name or district.")
 
-        picking = st.session_state.get("pick_route_origin", False)
-        if picking:
-            st.info("Click the map to choose your starting point. Turn off the switch to select libraries again.")
         library_map = build_library_map(libraries, route, st.session_state.get("route_origin"))
 
         result = st_folium(
             library_map,
             height=500,
             use_container_width=True,
-            returned_objects=["last_clicked", "last_object_clicked", "last_object_clicked_count"],
-            key="origin_picker" if picking else "library_map",
-        )
-        if route:
-            st.caption("Blue: walking route. Time is an estimate.")
-        st.caption(
-            "Walking routes: [OSRM / FOSSGIS](https://routing.openstreetmap.de/about.html) · "
-            "Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) · "
-            "[Fix the map](https://www.openstreetmap.org/fixthemap)"
+            returned_objects=["last_object_clicked", "last_object_clicked_count"],
+            key="library_map",
         )
     return result or {}
 def show_library_information(row, container):
@@ -186,14 +174,38 @@ def show_library_information(row, container):
     with container:
         with st.container(border=True):
             st.subheader("Library Information")
-            st.markdown(f"### {library.name}")
-            st.table(library.details())
-            return show_directions(library)
+            st.html(f"<h3>{html.escape(str(library.name))}</h3>")
+            rows = []
+            for label, value in library.details().items():
+                text = " ".join(str(value).split())
+                content = html.escape(text)
+                if label == "Website":
+                    url = "https://" + text if text.startswith("www.") else text
+                    if urlsplit(url).scheme in ("http", "https"):
+                        content = (
+                            f'<a href="{html.escape(url, quote=True)}" target="_blank" '
+                            f'rel="noopener noreferrer">{content}</a>'
+                        )
+                rows.append(f"<tr><th scope='row'>{html.escape(label)}</th><td>{content}</td></tr>")
+            st.html(
+                """<style>
+                .library-details {width:100%; border-collapse:collapse; font-size:14px;}
+                .library-details th, .library-details td {
+                    padding:8px 10px; border:1px solid #E8D8BD;
+                    text-align:left; vertical-align:top; line-height:1.6;
+                    white-space:normal; word-break:normal; overflow-wrap:anywhere;
+                    letter-spacing:normal; word-spacing:normal;
+                }
+                .library-details th {width:28%; font-weight:400; color:#786A61;}
+                </style><table class="library-details"><tbody>"""
+                + "".join(rows) + "</tbody></table>"
+            )
 
 
 def clear_route():
     st.session_state.pop("active_route", None)
     st.session_state.pop("route_error", None)
+    st.session_state.pop("find_route_requested", None)
 
 
 def receive_location():
@@ -202,44 +214,35 @@ def receive_location():
         clear_route()
         try:
             st.session_state["route_origin"] = coordinates(position["latitude"], position["longitude"])
-            st.session_state["pick_route_origin"] = False
-            st.session_state["location_accuracy"] = position.get("accuracy")
+            st.session_state["find_route_requested"] = True
         except (KeyError, RoutingError) as error:
             st.session_state["route_error"] = str(error)
 
 
 def show_directions(library):
-    st.markdown("#### Directions on this map")
-    mode_label = st.selectbox(
-        "Travel mode", list(ROUTE_MODES), key="route_mode", on_change=clear_route,
-    )
+    st.markdown("#### Directions")
+    mode_column, action_column = st.columns([1, 2], vertical_alignment="bottom")
+    with mode_column:
+        mode_label = st.selectbox(
+            "Travel mode", list(ROUTE_MODES), key="route_mode", on_change=clear_route,
+        )
     mode = ROUTE_MODES[mode_label]
-    location_button(receive_location)
-    st.toggle("Choose starting point on map", key="pick_route_origin")
+    browser_url = naver_browser_url(library) if mode == "public" else None
+    with action_column:
+        location_button(receive_location, browser_url=browser_url)
     origin = st.session_state.get("route_origin")
-    if origin:
-        st.caption(f"Starting point: {origin[0]:.5f}, {origin[1]:.5f}")
-        accuracy = st.session_state.get("location_accuracy")
-        if accuracy and accuracy > 100:
-            st.caption("Location accuracy is low. You can choose a more precise point on the map.")
-    else:
-        st.caption("Use your current location or choose a starting point on the map.")
+    find_requested = st.session_state.pop("find_route_requested", False)
     if mode == "public":
-        clear_route()
-        if origin is None:
-            st.info("Set your starting point first so Naver Map can keep the same location.")
-        else:
-            st.caption("Open Naver Map to share this starting point and the selected library. Choose bus or subway there.")
-            show_naver_directions(library, "public", origin)
+        st.session_state.pop("active_route", None)
+        if st.session_state.get("route_error"):
+            st.warning(st.session_state["route_error"])
         return None
-    st.caption("Show route sends the starting point and destination to OSRM/FOSSGIS.")
     request_key = (str(library.serial_number), origin, mode)
     route = st.session_state.get("active_route")
-    if route and route["request_key"] != request_key:
+    if route and (route["request_key"] != request_key or "points" not in route):
         clear_route()
         route = None
-    if st.button("Show route", type="primary", width="stretch",
-                 disabled=origin is None):
+    if find_requested and origin is not None:
         clear_route()
         route = None
         try:
@@ -256,39 +259,12 @@ def show_directions(library):
         distance_column, time_column = st.columns(2)
         distance_column.metric("Route distance", f"{route['distance'] / 1000:.2f} km")
         time_column.metric("Estimated time", f"{max(1, math.ceil(route['duration'] / 60))} min")
-        for warning in route["warnings"]:
-            st.warning(warning)
-        with st.expander("Route details"):
-            for index, step in enumerate(route["steps"], 1):
-                st.text(f"{index}. {step}")
-        if st.button("Clear route", width="stretch"):
+        if st.button("Clear route", type="tertiary"):
             clear_route()
             st.rerun()
 
     return route
 
-
-def show_naver_directions(library, mode, origin):
-    try:
-        app_url, web_url = naver_directions_links(library, mode, origin)
-    except (TypeError, ValueError):
-        st.info("Directions are unavailable because this library's coordinates are invalid.")
-        return
-
-    st.link_button(
-        "Open Naver Map app",
-        app_url,
-        type="primary",
-        width="stretch",
-    )
-    st.caption(
-        "Requires the Naver Map app. Your selected starting point is included."
-    )
-    st.link_button("Directions in browser", web_url, width="stretch")
-    st.caption(
-        "On a computer or without the app, open the browser link. "
-        "Both endpoints are filled in. Choose a bus or subway route in Naver Map."
-    )
 
 def show_district_chart(counts):
     st.subheader("Libraries by District")

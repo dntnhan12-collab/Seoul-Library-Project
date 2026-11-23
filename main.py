@@ -1,10 +1,10 @@
 import app
 import streamlit as st
 from models.library_manager import LibraryManager
+from models.library import Library
 from services.analyzer import (get_libraries_per_district, get_total_districts, get_total_libraries,)
 from services.data_manager import get_cleaned_library_data
 from services.search import (create_library_filters, filter_libraries, find_exact_libraries,)
-from services.routing import RoutingError, coordinates
 
 def main():
     st.set_page_config(
@@ -30,6 +30,9 @@ def main():
 
     districts = sorted(libraries["District_Name"].dropna().unique())
     search_column, map_column = st.columns([1, 2])
+    with map_column:
+        map_area = st.container()
+        directions_area = st.container()
     app.show_search_panel(search_column, districts, libraries)
 
     filters = create_library_filters(
@@ -71,41 +74,29 @@ def main():
 
     route = None
     if not selected_rows.empty:
-        route = app.show_library_information(selected_rows.iloc[0], search_column)
+        app.show_library_information(selected_rows.iloc[0], search_column)
+        with directions_area:
+            route = app.show_directions(Library.from_row(selected_rows.iloc[0]))
     else:
         app.clear_route()
-        state["pick_route_origin"] = False
 
-    map_result = app.show_map(map_column, shown, route)
+    # Focus the route view on its destination; retain search results for browsing.
+    map_libraries = selected_rows if route is not None else shown
+    map_result = app.show_map(map_area, map_libraries, route)
     clicked_coordinates = map_result.get("last_object_clicked")
     click_count = map_result.get("last_object_clicked_count")
     ignore_old_map_click = state["ignore_map_click_once"]
     state["ignore_map_click_once"] = False
 
-    if state.get("pick_route_origin"):
-        clicked = map_result.get("last_clicked")
-        if clicked and clicked != state.get("last_origin_click"):
-            state["last_origin_click"] = clicked
-            try:
-                state["route_origin"] = coordinates(clicked["lat"], clicked["lng"])
-                state.pop("location_accuracy", None)
-                app.clear_route()
-            except RoutingError as error:
-                state["route_error"] = str(error)
-            st.rerun()
-    else:
-        state.pop("last_origin_click", None)
-
     if (
-        not state.get("pick_route_origin")
-        and not ignore_old_map_click
+        not ignore_old_map_click
         and click_count is not None
         and click_count != state["last_map_click_count"]
     ):
         state["last_map_click_count"] = click_count
 
         if clicked_coordinates and not shown.empty:
-            # Starting-point and transit-stop markers must not select a library.
+            # The user marker must not select a library.
             clicked_rows = shown[
                 (shown["Latitude"] - clicked_coordinates["lat"]).abs().lt(0.000001)
                 & (shown["Longitude"] - clicked_coordinates["lng"]).abs().lt(0.000001)

@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 from urllib.error import URLError
 
-from services.routing import RoutingError, _request_json, coordinates, walking_route
+from services.routing import RoutingError, _request_json, walking_route
 
 
 START = (37.5665, 126.978)
@@ -24,9 +24,9 @@ class RoutingTests(unittest.TestCase):
         with patch("services.routing._request_json", return_value=WALKING_RESPONSE) as request:
             route = walking_route(START, END)
         self.assertIn("routed-foot/route/v1/foot/126.978,37.5665", request.call_args.args[0])
-        self.assertEqual(route["segments"][0]["points"][0], START)
+        self.assertEqual(route["points"][0], START)
         self.assertEqual(route["duration"], 360)
-        self.assertEqual(len(route["segments"][0]["points"]), 3)
+        self.assertEqual(len(route["points"]), 3)
 
     def test_invalid_coordinates_never_call_provider(self):
         with patch("services.routing._request_json") as request:
@@ -41,19 +41,18 @@ class RoutingTests(unittest.TestCase):
                 with self.assertRaises(RoutingError):
                     walking_route(START, END)
 
-    def test_network_errors_do_not_expose_key_or_coordinates(self):
-        with patch("services.routing.urlopen", side_effect=URLError("secret-key 126.978")):
+    def test_network_errors_do_not_expose_coordinates(self):
+        with patch("services.routing.urlopen", side_effect=URLError("request failed at 126.978")):
             with self.assertRaises(RoutingError) as error:
-                _request_json("https://api.odsay.com/example", {"apiKey": "secret-key"})
-        self.assertNotIn("secret-key", str(error.exception))
+                _request_json("https://routing.openstreetmap.de/example", {})
         self.assertNotIn("126.978", str(error.exception))
 
     def test_naver_preserves_origin(self):
         from types import SimpleNamespace
         from urllib.parse import urlsplit, parse_qs
-        from services.directions import naver_directions_links
+        from services.routing import naver_browser_url
         library = SimpleNamespace(latitude=END[0], longitude=END[1], name="Library & test")
-        for url in naver_directions_links(library, "public", START):
+        for url in [naver_browser_url(library, START)]:
             query = parse_qs(urlsplit(url).query)
             self.assertEqual(float(query["slat"][0]), START[0])
             self.assertEqual(float(query["slng"][0]), START[1])

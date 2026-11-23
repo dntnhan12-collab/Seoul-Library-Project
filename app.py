@@ -1,8 +1,9 @@
 import html
 import json
 import math
+from os import getenv
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit
 
 import altair as alt
 import folium
@@ -153,12 +154,22 @@ def build_library_map(libraries, route=None, origin=None, view=None):
     if view:
         center = [view["center"]["lat"], view["center"]["lng"]]
         zoom = view["zoom"]
-    library_map = folium.Map(
-        location=center, zoom_start=zoom,
-        attr=('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · '
-              '<a href="https://routing.openstreetmap.de/about.html">OSRM / FOSSGIS</a> · '
-              '<a href="https://www.openstreetmap.org/fixthemap">Fix the map</a>'),
+    attribution = (
+        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · '
+        '<a href="https://routing.openstreetmap.de/about.html">OSRM / FOSSGIS</a> · '
+        '<a href="https://www.openstreetmap.org/fixthemap">Fix the map</a>'
     )
+    carto_key = getenv("CARTO_BASEMAPS_API_KEY", "").strip()
+    if carto_key:
+        voyager_url = "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+        tiles = folium.TileLayer(
+            tiles=f"{voyager_url}?{urlencode({'key': carto_key})}",
+            name="CARTO Voyager",
+            attr=attribution + ' · © <a href="https://carto.com/attributions">CARTO</a>',
+        )
+    else:
+        tiles = folium.TileLayer("OpenStreetMap", attr=attribution)
+    library_map = folium.Map(location=center, zoom_start=zoom, tiles=tiles)
     library_map.add_child(EventHandler("layeradd", JsCode("""
         function (event) {
             const map = event.target;

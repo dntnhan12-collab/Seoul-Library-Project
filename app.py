@@ -4,6 +4,8 @@ from urllib.parse import urlsplit
 
 import altair as alt
 import folium
+from folium.elements import EventHandler
+from folium.utilities import JsCode
 import streamlit as st
 from streamlit_folium import st_folium
 from models.library import Library
@@ -139,6 +141,19 @@ def build_library_map(libraries, route=None, origin=None, view=None):
               '<a href="https://routing.openstreetmap.de/about.html">OSRM / FOSSGIS</a> · '
               '<a href="https://www.openstreetmap.org/fixthemap">Fix the map</a>'),
     )
+    library_map.add_child(EventHandler("layeradd", JsCode("""
+        function (event) {
+            const map = event.target;
+            const container = map.getContainer();
+            let dragged = false;
+
+            container.addEventListener('pointerdown', () => { dragged = false; }, true);
+            map.on('dragstart', () => { dragged = true; });
+            container.addEventListener('click', (click) => {
+                if (dragged) click.stopPropagation();
+            }, true);
+        }
+    """), once=True))
     folium.plugins.LocateControl(position="topleft", auto_start=False).add_to(library_map)
     for _, row in libraries.iterrows():
         folium.Marker(

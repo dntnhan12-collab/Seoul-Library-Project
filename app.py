@@ -3,6 +3,7 @@ import folium
 import streamlit as st
 from streamlit_folium import st_folium
 from models.library import Library
+from services.directions import TRAVEL_MODES, naver_directions_links
 
 def clear_search():
     st.session_state["search_name"] = ""
@@ -159,6 +160,39 @@ def show_library_information(row, container):
             st.subheader("Library Information")
             st.markdown(f"### {library.name}")
             st.table(library.details())
+            show_directions(library)
+
+
+def show_directions(library):
+    st.markdown("#### Directions")
+    travel_mode = st.selectbox(
+        "Travel mode (mobile app)",
+        list(TRAVEL_MODES),
+        key="directions_travel_mode",
+    )
+    try:
+        app_url, web_url = naver_directions_links(
+            library, TRAVEL_MODES[travel_mode]
+        )
+    except (TypeError, ValueError):
+        st.info("Directions are unavailable because this library's coordinates are invalid.")
+        return
+
+    st.link_button(
+        "Open Naver Map app",
+        app_url,
+        type="primary",
+        width="stretch",
+    )
+    st.caption(
+        "On your phone, requires the Naver Map app. Allow location access "
+        "in Naver Map to get directions from your current location."
+    )
+    st.link_button("Directions in browser", web_url, width="stretch")
+    st.caption(
+        "On a computer or without the app, open the browser link. "
+        "Your destination is filled in; choose your starting point and travel mode in Naver Map."
+    )
 
 def show_district_chart(counts):
     st.subheader("Libraries by District")

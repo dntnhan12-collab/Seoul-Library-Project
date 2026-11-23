@@ -64,3 +64,7 @@ This project focuses on the two SOLID principles most clearly represented in its
 - Filter by district, or use **Find** and **Reset** to apply or clear a search.
 - Browse library locations on an interactive map and click a marker to inspect a library.
 - View total library and district counts, result count, library details, and a bar chart of libraries by district.
+- After selecting a library, use **Open Naver Map app** on a phone for directions from your current location, with public transit, walking, driving, or cycling options. Naver Map must be installed and allowed to access your location.
+- Use **Directions in browser** on a computer or without the app. The destination is filled in; choose the starting point and travel mode in Naver Map. This link initially opens public transit directions.
+
+Directions use the existing library coordinates and require no API key or additional dataset. Routes are displayed in Naver Map, outside this dashboard; the dashboard does not collect or store the user's location for these links. Mobile links follow the [Naver URL Scheme documentation](https://guide-gov.ncloud-docs.com/release-20260820/docs/naveropenapiv3-maps-url-scheme-url-scheme). The browser shortcut is verified against Naver's current website and may need updating if Naver changes its URL format.

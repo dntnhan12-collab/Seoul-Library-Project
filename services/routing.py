@@ -1,4 +1,4 @@
-"""Walking geometry and optional Korean bus/subway routes, in WGS84."""
+"""Walking routes in WGS84."""
 
 import json
 import math
@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
-ROUTE_MODES = {"Walking": "walk", "Bus": "bus", "Subway": "subway", "Bus + subway": "transit"}
+ROUTE_MODES = {"Walking": "walk", "Bus / subway (Naver Map)": "public"}
 _walking_lock = threading.Lock()
 _last_walking_request = 0.0
 
@@ -73,84 +73,3 @@ def walking_route(start, end):
         "steps": [f"Walk to the library ({distance / 1000:.2f} km)."],
         "warnings": [],
     }
-
-
-def _odsay(endpoint, parameters, api_key):
-    data = _request_json(
-        "https://api.odsay.com/v1/api/" + endpoint,
-        {**parameters, "apiKey": api_key, "lang": 1, "output": "json"},
-    )
-    if data.get("error"):
-        raise RoutingError(
-            "ODsay could not return a route. Check the Server API key, registered server IP, "
-            "quota, and whether this journey has transit service."
-        )
-    if not isinstance(data.get("result"), dict):
-        raise RoutingError("ODsay returned incomplete route data.")
-    return data["result"]
-
-
-def transit_route(start, end, mode, api_key):
-    if not api_key:
-        raise RoutingError("Bus and subway routing has not been enabled yet. Walking is available.")
-    path_types = {"transit": 0, "subway": 1, "bus": 2}
-    if mode not in path_types:
-        raise RoutingError("Unsupported travel mode.")
-    start, end = coordinates(*start), coordinates(*end)
-    result = _odsay("searchPubTransPathT", {
-        "SX": start[1], "SY": start[0], "EX": end[1], "EY": end[0],
-        "SearchType": 0, "SearchPathType": path_types[mode], "OPT": 0,
-    }, api_key)
-    paths = [path for path in result.get("path", []) if path.get("pathType") in (1, 2, 3)]
-    if mode != "transit":
-        paths = [path for path in paths if path.get("pathType") == path_types[mode]]
-    if not paths:
-        raise RoutingError("No route was found for this travel mode. Try another mode or starting point.")
-    try:
-        path = paths[0]  # ODsay's recommended route.
-        info, subpaths = path["info"], path["subPath"]
-        # Zero base ensures loadLane returns absolute longitude/latitude.
-        geometry = _odsay("loadLane", {"mapObject": "0:0@" + info["mapObj"]}, api_key)
-        segments = []
-        for lane in geometry["lane"]:
-            lane_mode = {1: "bus", 2: "subway"}[int(lane["class"])]
-            for section in lane["section"]:
-                points = [coordinates(point["y"], point["x"]) for point in section["graphPos"]]
-                if len(points) >= 2:
-                    segments.append({"points": points, "mode": lane_mode, "label": lane_mode.title()})
-        if not segments:
-            raise ValueError("No geometry")
-        steps, warnings, stops = [], [], []
-        for index, subpath in enumerate(subpaths):
-            traffic_type = int(subpath["trafficType"])
-            if traffic_type == 3:
-                distance = float(subpath.get("distance", 0))
-                steps.append(f"Walk {distance:.0f} m.")
-                if distance <= 0:
-                    continue
-                previous = next((p for p in reversed(subpaths[:index]) if p["trafficType"] != 3), None)
-                following = next((p for p in subpaths[index + 1:] if p["trafficType"] != 3), None)
-                walk_start = coordinates(previous["endY"], previous["endX"]) if previous else start
-                walk_end = coordinates(following["startY"], following["startX"]) if following else end
-                try:
-                    segments.extend(walking_route(walk_start, walk_end)["segments"])
-                except RoutingError:
-                    warnings.append("A walking connection could not be drawn; follow the stops in the itinerary.")
-            else:
-                lane = subpath["lane"][0]
-                name = str(lane.get("busNo") or lane.get("name") or "Subway")
-                boarding, arrival = str(subpath["startName"]), str(subpath["endName"])
-                steps.append(f"{name}: {boarding} → {arrival} ({subpath['sectionTime']} min).")
-                stops.extend([
-                    {"point": coordinates(subpath["startY"], subpath["startX"]), "name": boarding},
-                    {"point": coordinates(subpath["endY"], subpath["endX"]), "name": arrival},
-                ])
-        distance, duration = float(info["totalDistance"]), float(info["totalTime"]) * 60
-        if not all(math.isfinite(v) and v >= 0 for v in (distance, duration)):
-            raise ValueError("Invalid summary")
-        return {"segments": segments, "distance": distance, "duration": duration,
-                "steps": steps, "warnings": list(dict.fromkeys(warnings)), "stops": stops}
-    except RoutingError:
-        raise
-    except (KeyError, IndexError, TypeError, ValueError):
-        raise RoutingError("ODsay returned incomplete route geometry. Please try another route.") from None

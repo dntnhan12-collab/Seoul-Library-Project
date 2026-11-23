@@ -64,27 +64,16 @@ This project focuses on the two SOLID principles most clearly represented in its
 - Filter by district, or use **Find** and **Reset** to apply or clear a search.
 - Browse library locations on an interactive map and click a marker to inspect a library.
 - View total library and district counts, result count, library details, and a bar chart of libraries by district.
-- Select a library, use **Use my current location** or **Choose starting point on map**, and press **Show route** to draw a walking route directly on the map with distance and estimated time.
-- Walking is available without an API key. Bus, subway, and combined routes require the ODsay setup below; they remain unavailable until configured.
-- The **Open in Naver Map** section also provides an app link for walking or public transit. Naver Map must be installed and allowed to access your location.
-- Use **Directions in browser** on a computer or without the app. The destination is filled in; choose the starting point and travel mode in Naver Map. This link initially opens public transit directions.
+- Select a library and set the starting point with **Use my current location** or **Choose starting point on map**.
+- Choose **Walking**, then **Show route** to draw the walking route on this website with distance and estimated time.
+- Choose **Bus / subway (Naver Map)** to open Naver's app or website. Both links carry the same starting coordinates and selected library. Choose the preferred transit route in Naver Map.
 
-Directions use the existing library coordinates; no additional CSV is needed. Mobile links follow the [Naver URL Scheme documentation](https://guide-gov.ncloud-docs.com/release-20260820/docs/naveropenapiv3-maps-url-scheme-url-scheme). The browser shortcut may need updating if Naver changes its URL format.
+## Directions
 
-## Routes displayed on the website
+No API key or additional CSV is required. Walking uses the [FOSSGIS OSRM foot service](https://routing.openstreetmap.de/about.html), intended for light use. Requests are limited to one per second per app process. The origin and route stay in the user's Streamlit session, not in project files or shared caches. Changing travel modes keeps the starting point and clears the old route.
 
-Walking uses the [FOSSGIS OSRM foot service](https://routing.openstreetmap.de/about.html), based on OpenStreetMap paths. The app draws the returned geometry rather than a straight line. Time is an estimate, and path coverage depends on OpenStreetMap. If no route is available, the app shows an error without inventing a line. The public service is for light usage: calls are serialized to at most one per second per app process, and the current result is kept only in the user's Streamlit session. Use a dedicated routing service before running a busy or multi-process deployment.
+Location requires permission and HTTPS or localhost. Alternatively choose a point on the map. Show route shares endpoints with OSRM/FOSSGIS; opening Naver shares endpoints with Naver. The transferred origin is a snapshot, not continuous GPS tracking.
 
-Browser location works on HTTPS or localhost and requires permission. Users can instead enable **Choose starting point on map** and click the map; switch it off to select library markers again. The map's existing locate icon only centers the map; the new **Use my current location** button sets the route origin. Clicking **Show route** sends the selected endpoints to the routing provider. They are not written to project files or shared caches; providers may retain request logs according to their policies.
+Bus and subway routing takes place in Naver; ODsay is no longer used. App links require Naver Map installed. Browser shortcuts prefill both endpoints and may need updating if Naver changes its URL format.
 
-For bus/subway routes:
-
-1. Register an **ODsay Server API key**, with the outbound IP of the machine running Streamlit. A Web key is not interchangeable with a Server key. Check the provider's plan and access to both `searchPubTransPathT` and `loadLane`.
-2. Copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and fill in `ODSAY_API_KEY`. The real secrets file is ignored by Git. Alternatively set the `ODSAY_API_KEY` environment variable. On Streamlit hosting, use the app's Secrets settings and confirm the host's outbound IP meets ODsay's requirements.
-3. Restart Streamlit, select **Bus**, **Subway**, or **Bus + subway**, and click **Show route**.
-
-The adapter requests ODsay's recommended local journey and draws the route geometry from `loadLane`: green for bus and purple for subway. Walking connections are drawn in blue using OSRM; if a connection cannot be routed, it is explicitly reported as missing. Stops and transfer steps appear in **Route details**. The estimate is not a live vehicle arrival forecast. See [ODsay API reference](https://lab.odsay.com/guide/releaseReference) and [Server versus Web key guidance](https://lab.odsay.com/community/boardView?seq=658).
-
-The walking provider has been tested with a real Seoul route. The ODsay adapter has automated response-fixture tests but still needs a live integration check with a configured key.
-
-Run routing checks with `python -m unittest discover -s tests -v`.
+Run checks with `python -m unittest discover -s tests -v`.

@@ -13,12 +13,8 @@ TRAVEL_MODES = {
 APP_URL = "https://seoul-library-explorer.streamlit.app/"
 
 
-def naver_directions_links(library, mode="public"):
-    """Leave the origin unset so the Naver app uses the user's location.
-
-    The browser link opens a destination-filled transit form, where users
-    choose their starting point and can change the travel mode.
-    """
+def naver_directions_links(library, mode="public", origin=None):
+    """Include the same origin in app and browser links."""
     if mode not in TRAVEL_MODES.values():
         raise ValueError("Unsupported travel mode.")
 
@@ -32,8 +28,15 @@ def naver_directions_links(library, mode="public"):
     ):
         raise ValueError("This library has no valid coordinates for Naver Map.")
 
+    app_origin, web_origin = {}, {}
+    if origin is not None:
+        from services.routing import coordinates
+        lat, lon = coordinates(*origin)
+        app_origin = {"slat": lat, "slng": lon, "sname": "Starting point"}
+        web_origin = {"slat": lat, "slng": lon, "stext": "Starting point"}
     app_query = urlencode(
         {
+            **app_origin,
             "dlat": latitude,
             "dlng": longitude,
             "dname": library.name,
@@ -43,6 +46,7 @@ def naver_directions_links(library, mode="public"):
     )
     web_query = urlencode(
         {
+            **web_origin,
             "elng": longitude,
             "elat": latitude,
             "etext": library.name,

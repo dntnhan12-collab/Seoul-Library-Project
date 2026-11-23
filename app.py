@@ -1,6 +1,5 @@
 import html
 import math
-import os
 
 import altair as alt
 import folium
@@ -8,7 +7,7 @@ import streamlit as st
 from streamlit_folium import st_folium
 from models.library import Library
 from services.directions import naver_directions_links
-from services.routing import ROUTE_MODES, RoutingError, coordinates, transit_route, walking_route
+from services.routing import ROUTE_MODES, RoutingError, coordinates, walking_route
 from location_control import location_button
 
 def clear_search():
@@ -175,14 +174,12 @@ def show_map(container, libraries, route=None):
             key="origin_picker" if picking else "library_map",
         )
         if route:
-            st.caption("Blue: walking · Green: bus · Purple: subway. Times are estimates.")
+            st.caption("Blue: walking route. Time is an estimate.")
         st.caption(
             "Walking routes: [OSRM / FOSSGIS](https://routing.openstreetmap.de/about.html) · "
             "Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) · "
             "[Fix the map](https://www.openstreetmap.org/fixthemap)"
         )
-        if route and route["mode"] != "walk":
-            st.caption("Public transport route data: [ODsay](https://www.odsay.com/)")
     return result or {}
 def show_library_information(row, container):
     library = Library.from_row(row)
@@ -211,25 +208,12 @@ def receive_location():
             st.session_state["route_error"] = str(error)
 
 
-def odsay_api_key():
-    key = os.environ.get("ODSAY_API_KEY", "")
-    if not key:
-        try:
-            key = st.secrets.get("ODSAY_API_KEY", "")
-        except (FileNotFoundError, st.errors.StreamlitSecretNotFoundError):
-            pass
-    return str(key).strip()
-
-
 def show_directions(library):
     st.markdown("#### Directions on this map")
     mode_label = st.selectbox(
         "Travel mode", list(ROUTE_MODES), key="route_mode", on_change=clear_route,
     )
     mode = ROUTE_MODES[mode_label]
-    api_key = odsay_api_key() if mode != "walk" else ""
-    if mode != "walk" and not api_key:
-        st.info("Bus and subway routes are not enabled yet. You can use Walking or open Naver Map below.")
     location_button(receive_location)
     st.toggle("Choose starting point on map", key="pick_route_origin")
     origin = st.session_state.get("route_origin")
@@ -240,24 +224,28 @@ def show_directions(library):
             st.caption("Location accuracy is low. You can choose a more precise point on the map.")
     else:
         st.caption("Use your current location or choose a starting point on the map.")
-    st.caption(
-        "Show route sends the starting point and destination to "
-        + ("OSRM/FOSSGIS." if mode == "walk" else "ODsay and, for walking connections, OSRM/FOSSGIS.")
-    )
+    if mode == "public":
+        clear_route()
+        if origin is None:
+            st.info("Set your starting point first so Naver Map can keep the same location.")
+        else:
+            st.caption("Open Naver Map to share this starting point and the selected library. Choose bus or subway there.")
+            show_naver_directions(library, "public", origin)
+        return None
+    st.caption("Show route sends the starting point and destination to OSRM/FOSSGIS.")
     request_key = (str(library.serial_number), origin, mode)
     route = st.session_state.get("active_route")
     if route and route["request_key"] != request_key:
         clear_route()
         route = None
     if st.button("Show route", type="primary", width="stretch",
-                 disabled=origin is None or (mode != "walk" and not api_key)):
+                 disabled=origin is None):
         clear_route()
         route = None
         try:
             destination = coordinates(library.latitude, library.longitude)
             with st.spinner("Finding your route…"):
-                route = (walking_route(origin, destination) if mode == "walk"
-                         else transit_route(origin, destination, mode, api_key))
+                route = walking_route(origin, destination)
             route.update(request_key=request_key, destination=destination, mode=mode)
             st.session_state["active_route"] = route
         except RoutingError as error:
@@ -277,14 +265,12 @@ def show_directions(library):
             clear_route()
             st.rerun()
 
-    with st.expander("Open in Naver Map"):
-        show_naver_directions(library, "walk" if mode == "walk" else "public")
     return route
 
 
-def show_naver_directions(library, mode):
+def show_naver_directions(library, mode, origin):
     try:
-        app_url, web_url = naver_directions_links(library, mode)
+        app_url, web_url = naver_directions_links(library, mode, origin)
     except (TypeError, ValueError):
         st.info("Directions are unavailable because this library's coordinates are invalid.")
         return
@@ -296,13 +282,12 @@ def show_naver_directions(library, mode):
         width="stretch",
     )
     st.caption(
-        "On your phone, requires the Naver Map app. Allow location access "
-        "in Naver Map to get directions from your current location."
+        "Requires the Naver Map app. Your selected starting point is included."
     )
     st.link_button("Directions in browser", web_url, width="stretch")
     st.caption(
         "On a computer or without the app, open the browser link. "
-        "Your destination is filled in; choose your starting point and travel mode in Naver Map."
+        "Both endpoints are filled in. Choose a bus or subway route in Naver Map."
     )
 
 def show_district_chart(counts):

@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 from urllib.error import URLError
 
-from services.routing import RoutingError, _request_json, coordinates, transit_route, walking_route
+from services.routing import RoutingError, _request_json, coordinates, walking_route
 
 
 START = (37.5665, 126.978)
@@ -48,48 +48,15 @@ class RoutingTests(unittest.TestCase):
         self.assertNotIn("secret-key", str(error.exception))
         self.assertNotIn("126.978", str(error.exception))
 
-    def test_transit_requires_key_without_network_request(self):
-        with patch("services.routing._request_json") as request:
-            with self.assertRaises(RoutingError):
-                transit_route(START, END, "bus", "")
-            request.assert_not_called()
-
-    def test_bus_geometry_and_walking_connections(self):
-        search = {"result": {"path": [{"pathType": 2,
-            "info": {"mapObj": "123:1:0:3", "totalDistance": 1200, "totalTime": 12},
-            "subPath": [
-                {"trafficType": 3, "distance": 100},
-                {"trafficType": 2, "lane": [{"busNo": "143"}], "sectionTime": 8,
-                 "startName": "Stop A", "endName": "Stop B", "startX": 126.979,
-                 "startY": 37.566, "endX": 126.981, "endY": 37.5655},
-                {"trafficType": 3, "distance": 100},
-            ]}]}}
-        geometry = {"result": {"lane": [{"class": 1, "section": [{"graphPos": [
-            {"x": 126.979, "y": 37.566}, {"x": 126.98, "y": 37.5658},
-            {"x": 126.981, "y": 37.5655},
-        ]}]}]}}
-        with patch("services.routing._request_json", side_effect=[search, geometry]) as request:
-            with patch("services.routing.walking_route", return_value={"segments": [
-                {"points": [START, END], "mode": "walk", "label": "Walking"}
-            ]}) as walk:
-                route = transit_route(START, END, "bus", "test-key")
-        self.assertEqual(request.call_args_list[0].args[1]["SearchPathType"], 2)
-        self.assertEqual(request.call_args_list[1].args[1]["mapObject"], "0:0@123:1:0:3")
-        self.assertEqual(route["segments"][0]["mode"], "bus")
-        self.assertEqual(len(route["segments"][0]["points"]), 3)
-        self.assertEqual(route["duration"], 720)
-        self.assertEqual(walk.call_count, 2)
-        self.assertIn("143: Stop A", route["steps"][1])
-
-    def test_subway_filter_and_provider_error(self):
-        with patch("services.routing._request_json", return_value={"error": [{"code": "500"}]}):
-            with self.assertRaises(RoutingError):
-                transit_route(START, END, "subway", "test-key")
-        with patch("services.routing._request_json", return_value={"result": {"path": [{"pathType": 2}]}}) as request:
-            with self.assertRaises(RoutingError):
-                transit_route(START, END, "subway", "test-key")
-            self.assertEqual(request.call_args.args[1]["SearchPathType"], 1)
-
+    def test_naver_preserves_origin(self):
+        from types import SimpleNamespace
+        from urllib.parse import urlsplit, parse_qs
+        from services.directions import naver_directions_links
+        library = SimpleNamespace(latitude=END[0], longitude=END[1], name="Library & test")
+        for url in naver_directions_links(library, "public", START):
+            query = parse_qs(urlsplit(url).query)
+            self.assertEqual(float(query["slat"][0]), START[0])
+            self.assertEqual(float(query["slng"][0]), START[1])
 
 if __name__ == "__main__":
     unittest.main()

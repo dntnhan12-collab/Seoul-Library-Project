@@ -4,6 +4,7 @@ from models.library_manager import LibraryManager
 from services.analyzer import (get_libraries_per_district, get_total_districts, get_total_libraries,)
 from services.data_manager import get_cleaned_library_data
 from services.search import (create_library_filters, filter_libraries, find_exact_libraries,)
+from services.routing import RoutingError, coordinates
 
 def main():
     st.set_page_config(
@@ -58,41 +59,61 @@ def main():
         len(shown),
     )
 
-    clicked_coordinates, click_count = app.show_map(map_column, shown)
+    selected_id = state["selected_library_id"]
+    selected_rows = (
+        shown[shown["Library_Serial_Number"].astype(str) == selected_id]
+        if selected_id else shown.iloc[0:0]
+    )
+    if selected_rows.empty and not shown.empty:
+        exact_matches = find_exact_libraries(shown, state["applied_name"])
+        if len(exact_matches) == 1:
+            selected_rows = exact_matches
+
+    route = None
+    if not selected_rows.empty:
+        route = app.show_library_information(selected_rows.iloc[0], search_column)
+    else:
+        app.clear_route()
+        state["pick_route_origin"] = False
+
+    map_result = app.show_map(map_column, shown, route)
+    clicked_coordinates = map_result.get("last_object_clicked")
+    click_count = map_result.get("last_object_clicked_count")
     ignore_old_map_click = state["ignore_map_click_once"]
     state["ignore_map_click_once"] = False
 
+    if state.get("pick_route_origin"):
+        clicked = map_result.get("last_clicked")
+        if clicked and clicked != state.get("last_origin_click"):
+            state["last_origin_click"] = clicked
+            try:
+                state["route_origin"] = coordinates(clicked["lat"], clicked["lng"])
+                state.pop("location_accuracy", None)
+                app.clear_route()
+            except RoutingError as error:
+                state["route_error"] = str(error)
+            st.rerun()
+    else:
+        state.pop("last_origin_click", None)
+
     if (
-        not ignore_old_map_click
+        not state.get("pick_route_origin")
+        and not ignore_old_map_click
         and click_count is not None
         and click_count != state["last_map_click_count"]
     ):
         state["last_map_click_count"] = click_count
 
         if clicked_coordinates and not shown.empty:
-            distances = (
-                (shown["Latitude"] - clicked_coordinates["lat"]) ** 2
-                + (shown["Longitude"] - clicked_coordinates["lng"]) ** 2
-            )
-            clicked_row = shown.loc[distances.idxmin()]
-            state["selected_library_id"] = str(
-                clicked_row["Library_Serial_Number"]
-            )
-
-    selected_id = state["selected_library_id"]
-    selected_rows = (
-        shown[shown["Library_Serial_Number"].astype(str) == selected_id]
-        if selected_id
-        else shown.iloc[0:0]
-    )
-
-    if selected_rows.empty and not shown.empty:
-        exact_matches = find_exact_libraries(shown, state["applied_name"])
-        if len(exact_matches) == 1:
-            selected_rows = exact_matches
-
-    if not selected_rows.empty:
-        app.show_library_information(selected_rows.iloc[0], search_column)
+            # Starting-point and transit-stop markers must not select a library.
+            clicked_rows = shown[
+                (shown["Latitude"] - clicked_coordinates["lat"]).abs().lt(0.000001)
+                & (shown["Longitude"] - clicked_coordinates["lng"]).abs().lt(0.000001)
+            ]
+            if not clicked_rows.empty:
+                state["selected_library_id"] = str(clicked_rows.iloc[0]["Library_Serial_Number"])
+                app.clear_route()
+                st.rerun()
 
     app.show_district_chart(get_libraries_per_district(libraries))
 

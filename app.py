@@ -1,9 +1,15 @@
+import html
+import math
+import os
+
 import altair as alt
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
 from models.library import Library
-from services.directions import TRAVEL_MODES, naver_directions_links
+from services.directions import naver_directions_links
+from services.routing import ROUTE_MODES, RoutingError, coordinates, transit_route, walking_route
+from location_control import location_button
 
 def clear_search():
     st.session_state["search_name"] = ""
@@ -13,6 +19,8 @@ def clear_search():
 
 
 def _set_applied_search(name, district, library_id=None, is_suggestion=False):
+    clear_route()
+    st.session_state["pick_route_origin"] = False
     st.session_state["applied_name"] = name
     st.session_state["applied_district"] = district
     st.session_state["selected_library_id"] = library_id
@@ -27,6 +35,7 @@ def apply_search():
 
 
 def clear_suggestion_choice():
+    clear_route()
     st.session_state["selected_library_id"] = None
     st.session_state["suggestion_selected"] = False
 
@@ -113,46 +122,68 @@ def show_summary(total_libraries, total_districts, found_count):
     district_column.metric("Districts", total_districts)
     found_column.metric("Libraries found", found_count)
 
-def show_map(container, libraries):
+def build_library_map(libraries, route=None, origin=None):
+    center = (
+        [libraries["Latitude"].mean(), libraries["Longitude"].mean()]
+        if not libraries.empty else [37.5665, 126.9780]
+    )
+    library_map = folium.Map(location=center, zoom_start=14 if len(libraries) == 1 else 11)
+    folium.plugins.LocateControl(position="topleft", auto_start=False).add_to(library_map)
+    for _, row in libraries.iterrows():
+        folium.Marker(
+            location=[row["Latitude"], row["Longitude"]],
+            tooltip=html.escape(str(row["Library_Name"])),
+            icon=folium.Icon(color="darkred"),
+        ).add_to(library_map)
+    if origin:
+        folium.Marker(origin, tooltip="Starting point", icon=folium.Icon(color="green", icon="user")).add_to(library_map)
+    if route:
+        colors = {"walk": "#2563EB", "bus": "#16A34A", "subway": "#9333EA"}
+        bounds = [origin, route["destination"]]
+        for segment in route["segments"]:
+            folium.PolyLine(
+                segment["points"], color=colors[segment["mode"]], weight=6, opacity=0.9,
+                tooltip=html.escape(segment["label"]), interactive=False,
+            ).add_to(library_map)
+            bounds.extend(segment["points"])
+        for stop in route.get("stops", []):
+            folium.CircleMarker(stop["point"], radius=5, color="#432818", fill=True,
+                                tooltip=html.escape(stop["name"]), bubbling_mouse_events=False).add_to(library_map)
+        library_map.fit_bounds(bounds, padding=(35, 35), max_zoom=16)
+    elif origin and len(libraries) == 1:
+        library_map.fit_bounds([origin, center], padding=(35, 35), max_zoom=16)
+    return library_map
+
+
+def show_map(container, libraries, route=None):
     with container:
         st.subheader("Library Map")
 
         if libraries.empty:
             st.info("No libraries match the search. Try another name or district.")
 
-        if not libraries.empty:
-            center = [libraries["Latitude"].mean(), libraries["Longitude"].mean()]
-        else:
-            center = [38, 127]
-
-        zoom = 14 if len(libraries) == 1 else 11
-        library_map = folium.Map(location=center, zoom_start=zoom)
-        folium.plugins.LocateControl(
-            position="topleft",
-            auto_start=False,
-        ).add_to(library_map)
-
-        for _, row in libraries.iterrows():
-            folium.Marker(
-                location=[row["Latitude"], row["Longitude"]],
-                tooltip=row["Library_Name"],
-                icon=folium.Icon(color="darkred"),
-            ).add_to(library_map)
+        picking = st.session_state.get("pick_route_origin", False)
+        if picking:
+            st.info("Click the map to choose your starting point. Turn off the switch to select libraries again.")
+        library_map = build_library_map(libraries, route, st.session_state.get("route_origin"))
 
         result = st_folium(
             library_map,
             height=500,
             use_container_width=True,
-            returned_objects=["last_object_clicked", "last_object_clicked_count"],
-            key="library_map",
+            returned_objects=["last_clicked", "last_object_clicked", "last_object_clicked_count"],
+            key="origin_picker" if picking else "library_map",
         )
-
-    if result:
-        return (
-            result.get("last_object_clicked"),
-            result.get("last_object_clicked_count"),
+        if route:
+            st.caption("Blue: walking · Green: bus · Purple: subway. Times are estimates.")
+        st.caption(
+            "Walking routes: [OSRM / FOSSGIS](https://routing.openstreetmap.de/about.html) · "
+            "Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) · "
+            "[Fix the map](https://www.openstreetmap.org/fixthemap)"
         )
-    return None, None
+        if route and route["mode"] != "walk":
+            st.caption("Public transport route data: [ODsay](https://www.odsay.com/)")
+    return result or {}
 def show_library_information(row, container):
     library = Library.from_row(row)
     with container:
@@ -160,20 +191,100 @@ def show_library_information(row, container):
             st.subheader("Library Information")
             st.markdown(f"### {library.name}")
             st.table(library.details())
-            show_directions(library)
+            return show_directions(library)
+
+
+def clear_route():
+    st.session_state.pop("active_route", None)
+    st.session_state.pop("route_error", None)
+
+
+def receive_location():
+    position = st.session_state.get("route_location", {}).get("position")
+    if position:
+        clear_route()
+        try:
+            st.session_state["route_origin"] = coordinates(position["latitude"], position["longitude"])
+            st.session_state["pick_route_origin"] = False
+            st.session_state["location_accuracy"] = position.get("accuracy")
+        except (KeyError, RoutingError) as error:
+            st.session_state["route_error"] = str(error)
+
+
+def odsay_api_key():
+    key = os.environ.get("ODSAY_API_KEY", "")
+    if not key:
+        try:
+            key = st.secrets.get("ODSAY_API_KEY", "")
+        except (FileNotFoundError, st.errors.StreamlitSecretNotFoundError):
+            pass
+    return str(key).strip()
 
 
 def show_directions(library):
-    st.markdown("#### Directions")
-    travel_mode = st.selectbox(
-        "Travel mode (mobile app)",
-        list(TRAVEL_MODES),
-        key="directions_travel_mode",
+    st.markdown("#### Directions on this map")
+    mode_label = st.selectbox(
+        "Travel mode", list(ROUTE_MODES), key="route_mode", on_change=clear_route,
     )
+    mode = ROUTE_MODES[mode_label]
+    api_key = odsay_api_key() if mode != "walk" else ""
+    if mode != "walk" and not api_key:
+        st.info("Bus and subway routes are not enabled yet. You can use Walking or open Naver Map below.")
+    location_button(receive_location)
+    st.toggle("Choose starting point on map", key="pick_route_origin")
+    origin = st.session_state.get("route_origin")
+    if origin:
+        st.caption(f"Starting point: {origin[0]:.5f}, {origin[1]:.5f}")
+        accuracy = st.session_state.get("location_accuracy")
+        if accuracy and accuracy > 100:
+            st.caption("Location accuracy is low. You can choose a more precise point on the map.")
+    else:
+        st.caption("Use your current location or choose a starting point on the map.")
+    st.caption(
+        "Show route sends the starting point and destination to "
+        + ("OSRM/FOSSGIS." if mode == "walk" else "ODsay and, for walking connections, OSRM/FOSSGIS.")
+    )
+    request_key = (str(library.serial_number), origin, mode)
+    route = st.session_state.get("active_route")
+    if route and route["request_key"] != request_key:
+        clear_route()
+        route = None
+    if st.button("Show route", type="primary", width="stretch",
+                 disabled=origin is None or (mode != "walk" and not api_key)):
+        clear_route()
+        route = None
+        try:
+            destination = coordinates(library.latitude, library.longitude)
+            with st.spinner("Finding your route…"):
+                route = (walking_route(origin, destination) if mode == "walk"
+                         else transit_route(origin, destination, mode, api_key))
+            route.update(request_key=request_key, destination=destination, mode=mode)
+            st.session_state["active_route"] = route
+        except RoutingError as error:
+            st.session_state["route_error"] = str(error)
+    if st.session_state.get("route_error"):
+        st.warning(st.session_state["route_error"])
+    if route:
+        distance_column, time_column = st.columns(2)
+        distance_column.metric("Route distance", f"{route['distance'] / 1000:.2f} km")
+        time_column.metric("Estimated time", f"{max(1, math.ceil(route['duration'] / 60))} min")
+        for warning in route["warnings"]:
+            st.warning(warning)
+        with st.expander("Route details"):
+            for index, step in enumerate(route["steps"], 1):
+                st.text(f"{index}. {step}")
+        if st.button("Clear route", width="stretch"):
+            clear_route()
+            st.rerun()
+
+    with st.expander("Open in Naver Map"):
+        show_naver_directions(library, "walk" if mode == "walk" else "public")
+    return route
+
+
+def show_naver_directions(library, mode):
     try:
-        app_url, web_url = naver_directions_links(
-            library, TRAVEL_MODES[travel_mode]
-        )
+        app_url, web_url = naver_directions_links(library, mode)
     except (TypeError, ValueError):
         st.info("Directions are unavailable because this library's coordinates are invalid.")
         return

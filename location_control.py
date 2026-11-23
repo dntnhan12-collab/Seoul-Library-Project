@@ -23,28 +23,29 @@ _location_button = st.components.v2.component(
                 ? 'Get your location and open Naver in a new browser tab with both endpoints.'
                 : 'Get your location and find a walking route using OSRM/FOSSGIS.';
             let active = true;
-            let pendingTab = null;
-            const closePendingTab = () => {
-                if (pendingTab && !pendingTab.closed) pendingTab.close();
-                pendingTab = null;
+            let readyUrl = null;
+            let readyPosition = null;
+            const openDirections = () => {
+                const tab = window.open(readyUrl, '_blank');
+                if (!tab) {
+                    button.textContent = 'Open directions';
+                    status.textContent = 'Your route is ready. Click Open directions to open Naver.';
+                    return;
+                }
+                tab.opener = null;
+                readyUrl = null;
+                button.textContent = 'Find route from my location';
+                status.textContent = '';
+                setTriggerValue('position', readyPosition);
             };
             button.onclick = () => {
+                if (readyUrl) {
+                    openDirections();
+                    return;
+                }
                 if (!window.isSecureContext || !navigator.geolocation) {
                     status.textContent = 'Location requires HTTPS or localhost.';
                     return;
-                }
-                // Open during the click gesture, before async GPS permission.
-                // Navigating this Streamlit frame would be blocked by Naver.
-                if (data?.browser_url) {
-                    pendingTab = window.open('about:blank', '_blank');
-                    if (!pendingTab) {
-                        status.textContent = 'Allow pop-ups for this site, then try again.';
-                        return;
-                    }
-                    pendingTab.opener = null;
-                    pendingTab.document.title = 'Finding directions';
-                    pendingTab.document.body.textContent =
-                        'Waiting for your location. Allow location access on the library page.';
                 }
                 button.disabled = true;
                 status.textContent = 'Waiting for location permission…';
@@ -56,28 +57,23 @@ _location_button = st.components.v2.component(
                     const longitude = position.coords.longitude;
                     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)
                         || latitude < 33 || latitude > 39 || longitude < 124 || longitude > 132) {
-                        closePendingTab();
                         status.textContent = 'Your location must be in South Korea to find a route.';
                         return;
                     }
                     if (data?.browser_url) {
-                        if (!pendingTab || pendingTab.closed) {
-                            pendingTab = null;
-                            status.textContent = 'The directions tab was closed. Click Find route again.';
-                            return;
-                        }
                         const url = new URL(data.browser_url);
                         url.searchParams.set('slat', String(latitude));
                         url.searchParams.set('slng', String(longitude));
                         url.searchParams.set('stext', 'Starting point');
-                        pendingTab.location.replace(url.toString());
-                        pendingTab = null;
+                        readyUrl = url.toString();
+                        readyPosition = {latitude, longitude};
+                        openDirections();
+                        return;
                     }
                     setTriggerValue('position', {latitude, longitude});
                 }, error => {
                     if (!active) return;
                     button.disabled = false;
-                    closePendingTab();
                     status.textContent = error.code === 1
                         ? 'Location permission was denied. Enable location access in your browser and try again.'
                         : 'Could not get your location. Check location services and try again.';
@@ -85,7 +81,6 @@ _location_button = st.components.v2.component(
             };
             return () => {
                 active = false;
-                closePendingTab();
                 button.onclick = null;
             };
         }

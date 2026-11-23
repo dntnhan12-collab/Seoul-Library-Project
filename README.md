@@ -63,7 +63,7 @@ This project focuses on the two SOLID principles most clearly represented in its
 - View total library and district counts, result count, library details, and a bar chart of libraries by district.
 - The **Directions** controls appear directly below the map. Select a library and travel mode, then press **Find route from my location**.
 - **Walking** gets your location and draws the route directly on this map, with distance and estimated time. Only the user marker, selected library, and route are displayed while a route is active. **Clear route** restores the library search results.
-- **Bus / subway (Naver Map)** opens a separate browser tab, gets your location, and loads Naver with both endpoints filled in. No second button or mobile app is required. The separate tab avoids Naver's restriction on embedded pages.
+- **Bus / subway (Naver Map)** gets your location on the dashboard, then opens Naver in a separate browser tab with both endpoints filled in. No mobile app is required. The separate tab avoids Naver's restriction on embedded pages.
 
 ## Directions
 
@@ -71,7 +71,7 @@ No API key or additional CSV is required. Walking uses the [FOSSGIS OSRM foot se
 
 Location requires permission and HTTPS or localhost. The walking action shares endpoints with OSRM/FOSSGIS; the transit action shares endpoints with Naver. If location access fails, the app reports the error without opening Naver. The transferred location is a snapshot, not continuous GPS tracking. Browser shortcuts may need updating if Naver changes its URL format.
 
-Allow pop-ups for the dashboard if the browser blocks the directions tab. A temporary tab opens immediately on the click while location permission is pending; it closes if location access fails.
+No blank tab opens while location permission is pending. If the browser blocks the directions tab after GPS completes, the same button changes to **Open directions**. Click it to open the prepared route without requesting location again.
 
 To refresh your location or recalculate a walking route, press **Find route from my location** again. Distances and times describe the route as calculated, not live progress. The app does not automatically reroute or draw bus/subway lines on the dashboard. GPS accuracy depends on the device and browser; a phone usually provides better positioning than a desktop computer.
 

@@ -4,16 +4,18 @@ from models.library_manager import LibraryManager
 from models.library import Library
 from services.analyzer import (get_libraries_per_district, get_total_districts, get_total_libraries,)
 from services.data_manager import get_cleaned_library_data
+from services.contracts import LibraryDataSource
+from services.data_sources import CsvLibraryDataSource
 from services.search import (create_library_filters, filter_libraries, find_exact_libraries,)
 
-def main():
+def main(data_source: LibraryDataSource):
     st.set_page_config(
         page_title="Seoul Public Library Explorer", layout="wide"
     )
     app.show_title()
 
     try:
-        libraries = get_cleaned_library_data()
+        libraries = get_cleaned_library_data(data_source)
     except FileNotFoundError:
         st.error("Could not find the library CSV file in the data folder.")
         st.stop()
@@ -110,4 +112,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Compose the app here; its processing depends only on LibraryDataSource.
+    main(CsvLibraryDataSource())

@@ -1,15 +1,10 @@
 from collections.abc import Iterable
-from typing import Protocol
 
 from models.library import Library
+from services.contracts import LibraryFilter
 
 
-class LibraryFilter(Protocol):
-    def matches(self, library: Library) -> bool:
-        pass
-
-
-class KeywordFilter:
+class KeywordFilter(LibraryFilter):
     def __init__(self, keyword: str):
         self.keyword = str(keyword or "").strip()
 
@@ -17,7 +12,7 @@ class KeywordFilter:
         return not self.keyword or library.matches_keyword(self.keyword)
 
 
-class DistrictFilter:
+class DistrictFilter(LibraryFilter):
     def __init__(self, district):
         self.district = district
 
@@ -29,7 +24,7 @@ class DistrictFilter:
         )
 
 
-def create_library_filters(keyword: str, district: str) -> tuple[LibraryFilter, DistrictFilter]:
+def create_library_filters(keyword: str, district: str) -> tuple[LibraryFilter, ...]:
     return KeywordFilter(keyword), DistrictFilter(district)
 
 

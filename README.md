@@ -39,21 +39,38 @@ The project uses the Seoul Metropolitan Government dataset **Seoul Public Librar
 
 - `Library` (`models/library.py`) represents one library record. It stores library details, checks whether a keyword matches the name, district, or address, builds an object from a data row, and returns details for display.
 - `LibraryManager` (`models/library_manager.py`) creates `Library` objects from the cleaned DataFrame and provides the collection to the rest of the program.
-- `main.py` coordinates the data and UI: it loads cleaned rows, creates the manager, applies search and district filters, updates map selection, and requests summary/chart results.
-- `services/data_manager.py` reads the CSV, converts latitude and longitude to numbers, and removes rows missing required values. `services/search.py` provides keyword search and district filtering. `services/analyzer.py` calculates library and district counts.
+- `main.py` coordinates the data and UI using an injected `LibraryDataSource`: it loads cleaned rows, creates the manager, applies search and district filters, updates map selection, and requests summary/chart results. The entry point chooses `CsvLibraryDataSource`.
+- `services/contracts.py` defines two small protocols: `LibraryDataSource.load()` and `LibraryFilter.matches(library)`.
+- `services/data_sources.py` implements CSV and in-memory DataFrame sources. `services/data_manager.py` uses the source contract, converts latitude and longitude to numbers, and removes rows missing required values. `services/search.py` provides keyword search and district filtering. `services/analyzer.py` calculates library and district counts.
 - `app.py` renders the Streamlit interface, map, library information, summary metrics, and district chart.
 - `services/routing.py` validates coordinates, retrieves walking routes from OSRM, and builds browser links for Naver transit directions.
 - `location_control.py` provides the browser location button. It requests permission only when clicked, then starts walking directions or navigates to Naver with both endpoints.
 - `tests/test_routing.py` checks route response handling, coordinate validation, error messages, and preservation of the starting point in Naver links.
+- `tests/test_library_contracts.py` checks interchangeable data sources and filters, independent data snapshots, and the cleaning/model/search pipeline.
 
-Data flow: CSV → cleaned DataFrame → `LibraryManager` → `Library` objects → search/filter → map, details, metrics, and chart.
+Data flow: injected data source → cleaned DataFrame → `LibraryManager` → `Library` objects → search/filter → map, details, metrics, and chart.
 
 ## SOLID principles demonstrated
 
-This project focuses on the two SOLID principles most clearly represented in its current code:
+The project demonstrates all five principles through its data-loading and filtering boundaries:
 
-- **Single Responsibility (S):** Responsibilities are separated across modules. `data_manager.py` loads and cleans data, `analyzer.py` calculates statistics, `search.py` filters libraries, and `app.py` renders the interface.
-- **Open/Closed (O):** `search.py` defines the `LibraryFilter` contract. A new filter can implement `matches()` and be passed to `filter_libraries()` without changing the shared filtering function.
+- **Single Responsibility (S):** `data_sources.py` handles data access, `data_manager.py` cleans rows, `analyzer.py` calculates statistics, `search.py` filters libraries, and `app.py` renders the interface.
+- **Open/Closed (O):** A new filter implements `LibraryFilter.matches()` and can be passed to `filter_libraries()` without changing the shared filtering function. A new data source can likewise implement `load()` without changing the cleaning logic.
+- **Liskov Substitution (L):** `CsvLibraryDataSource` and `DataFrameLibraryDataSource` satisfy the same behavioral contract: return independent snapshots with the library CSV columns, support repeated reads, and leave cleaning to the consumer. Either can feed the same cleaning/model/search pipeline. `KeywordFilter` and `DistrictFilter` both accept a `Library`, return a repeatable boolean, and do not mutate the library. Their matching criteria differ, but the consumer's assumptions remain valid. Contract tests exercise both implementations, including empty data and repeated calls.
+- **Interface Segregation (I):** Data cleaning needs only `LibraryDataSource.load()`; filtering needs only `LibraryFilter.matches(library)`. These are separate one-method protocols. A read-only source does not need save/delete/search methods, and a filter does not need data-loading methods. Tests use minimal objects with only the method their consumer requires.
+- **Dependency Inversion (D):** `main(data_source)` and `get_cleaned_library_data(source)` depend on the `LibraryDataSource` abstraction. The executable entry point constructs and injects `CsvLibraryDataSource`; the cleaning service never constructs a CSV reader or knows a file path. Tests inject a DataFrame source or a minimal fake without patching the CSV reader. `filter_libraries()` similarly consumes the `LibraryFilter` abstraction.
+
+These protocols use Python's structural typing: an object with the required method and behavior can be supplied without inheriting from the protocol. Type hints alone do not enforce behavior at runtime; the contract tests verify the shared guarantees.
+
+For example, use an existing table through the same processing code:
+
+```python
+from services.data_manager import get_cleaned_library_data
+from services.data_sources import DataFrameLibraryDataSource
+
+# existing_dataframe has the same columns as data/seoul_library_english.csv.
+libraries = get_cleaned_library_data(DataFrameLibraryDataSource(existing_dataframe))
+```
 
 ## Dashboard features
 
@@ -79,7 +96,7 @@ Library details are rendered as escaped text with wrapping to preserve spacing a
 
 ## Validation
 
-Run the automated routing checks without calling external services:
+Run the data-source/filter contract tests and routing checks without calling external services:
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v

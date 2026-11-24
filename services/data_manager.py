@@ -1,10 +1,10 @@
-from pathlib import Path
 import pandas as pd
-BASE_DIR = Path(__file__).resolve().parent.parent
-FILE_PATH = BASE_DIR / "data" / "seoul_library_english.csv"
 
-def get_cleaned_library_data():
-    df = pd.read_csv(FILE_PATH)
+from services.contracts import LibraryDataSource
+
+
+def get_cleaned_library_data(source: LibraryDataSource) -> pd.DataFrame:
+    df = source.load()
     
     # Update columns directly instead of creating '_cleaned' versions
     df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')

@@ -1,35 +1,14 @@
 import html
-import json
 import math
-from os import getenv
-from pathlib import Path
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import urlsplit
 
 import altair as alt
 import folium
-from folium.elements import EventHandler
-from folium.utilities import JsCode
 import streamlit as st
 from streamlit_folium import st_folium
 from models.library import Library
 from services.routing import ROUTE_MODES, RoutingError, coordinates, naver_browser_url, walking_route
 from location_control import location_button
-
-SUBWAY_COLORS = {
-    "1": "#0052A4", "2": "#00A84D", "3": "#EF7C1C", "4": "#00A5DE",
-    "5": "#996CAC", "6": "#CD7C2F", "7": "#747F00", "8": "#E6186C",
-    "9": "#BDB092", "airport": "#0090D2", "bundang": "#E3A800",
-    "gyeongui": "#69BC9B", "shinbundang": "#D4003B",
-}
-
-
-@st.cache_data
-def load_subway_data():
-    data_dir = Path(__file__).resolve().parent / "data"
-    return (
-        json.loads((data_dir / "seoul_subway_lines.geojson").read_text(encoding="utf-8")),
-        json.loads((data_dir / "seoul_subway_stations.geojson").read_text(encoding="utf-8")),
-    )
 
 def clear_search():
     st.session_state["search_name"] = ""
@@ -44,7 +23,7 @@ def _set_applied_search(name, district, library_id=None, is_suggestion=False):
     st.session_state["applied_district"] = district
     st.session_state["selected_library_id"] = library_id
     st.session_state["suggestion_selected"] = is_suggestion
-    st.session_state["map_revision"] += 1
+    st.session_state["ignore_map_click_once"] = True
 def apply_search():
     _set_applied_search(
         st.session_state.get("search_name", "").strip(),
@@ -57,7 +36,6 @@ def clear_suggestion_choice():
     clear_route()
     st.session_state["selected_library_id"] = None
     st.session_state["suggestion_selected"] = False
-    st.session_state["map_revision"] += 1
 
 def show_title():
     st.markdown(
@@ -142,205 +120,55 @@ def show_summary(total_libraries, total_districts, found_count):
     district_column.metric("Districts", total_districts)
     found_column.metric("Libraries found", found_count)
 
-def build_library_map(libraries):
+def build_library_map(libraries, route=None, origin=None):
     center = (
         [libraries["Latitude"].mean(), libraries["Longitude"].mean()]
         if not libraries.empty else [37.5665, 126.9780]
     )
-    zoom = 14 if len(libraries) == 1 else 11
-    attribution = (
-        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · '
-        '<a href="https://routing.openstreetmap.de/about.html">OSRM / FOSSGIS</a> · '
-        '<a href="https://www.openstreetmap.org/fixthemap">Fix the map</a>'
+    library_map = folium.Map(
+        location=center, zoom_start=14 if len(libraries) == 1 else 11,
+        attr=('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · '
+              '<a href="https://routing.openstreetmap.de/about.html">OSRM / FOSSGIS</a> · '
+              '<a href="https://www.openstreetmap.org/fixthemap">Fix the map</a>'),
     )
-    carto_key = getenv("CARTO_BASEMAPS_API_KEY", "").strip()
-    if carto_key:
-        voyager_url = "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
-        tiles = folium.TileLayer(
-            tiles=f"{voyager_url}?{urlencode({'key': carto_key})}",
-            name="CARTO Voyager",
-            attr=attribution + ' · © <a href="https://carto.com/attributions">CARTO</a>',
-        )
-    else:
-        tiles = folium.TileLayer("OpenStreetMap", attr=attribution)
-    library_map = folium.Map(location=center, zoom_start=zoom, tiles=tiles)
-    library_map.add_child(EventHandler("layeradd", JsCode("""
-        function (event) {
-            const map = event.target;
-            const container = map.getContainer();
-            let dragged = false;
-
-            container.addEventListener('pointerdown', () => { dragged = false; }, true);
-            map.on('dragstart', () => { dragged = true; });
-            container.addEventListener('click', (click) => {
-                if (dragged) click.stopPropagation();
-            }, true);
-        }
-    """), once=True))
-    library_map.get_root().header.add_child(folium.Element("""
-        <style>
-            .subway-station-label { visibility: hidden; }
-            .subway-labels-visible .subway-station-label,
-            .subway-station-label.station-hovered { visibility: visible; }
-        </style>
-    """))
-    library_map.add_child(EventHandler("zoomend layeradd", JsCode("""
-        function (event) {
-            const map = event.target;
-            map.getContainer().classList.toggle('subway-labels-visible', map.getZoom() >= 14);
-        }
-    """)))
     folium.plugins.LocateControl(position="topleft", auto_start=False).add_to(library_map)
-    markers = folium.FeatureGroup(name="Libraries").add_to(library_map)
     for _, row in libraries.iterrows():
         folium.Marker(
             location=[row["Latitude"], row["Longitude"]],
             tooltip=html.escape(str(row["Library_Name"])),
             icon=folium.Icon(color="darkred"),
-            bubbling_mouse_events=False,
-        ).add_to(markers)
-    markers.add_child(EventHandler("add", JsCode("""
-        function (event) {
-            const markers = event.target;
-            const map = markers._map;
-            let selected = null;
-
-            function showMarkers(only) {
-                selected = only;
-                markers.eachLayer((marker) => {
-                    const visible = !only || marker === only;
-                    marker.setOpacity(visible ? 1 : 0);
-                    const icon = marker.getElement();
-                    if (icon) icon.style.visibility = visible ? '' : 'hidden';
-                });
-            }
-
-            markers.on('click', (click) => {
-                if (click.layer && click.layer !== selected) showMarkers(click.layer);
-            });
-            map.on('click', () => {
-                if (selected) showMarkers(null);
-            });
-        }
-    """), once=True))
-    return library_map
-
-
-def build_directions_layer(libraries, route, origin):
-    destination = None
-    if route:
-        destination = route["destination"]
-    elif origin and len(libraries) == 1:
-        row = libraries.iloc[0]
-        destination = [row["Latitude"], row["Longitude"]]
-
-    directions = folium.FeatureGroup(
-        name="Directions", show=False,
-        destination=destination,
-        fit_key=json.dumps([origin, destination, bool(route)]) if destination else None,
-    )
+        ).add_to(library_map)
     if origin:
-        folium.Marker(origin, tooltip="Starting point", icon=folium.Icon(color="green", icon="user")).add_to(directions)
+        folium.Marker(origin, tooltip="Starting point", icon=folium.Icon(color="green", icon="user")).add_to(library_map)
     if route:
+        bounds = [origin, route["destination"], *route["points"]]
         folium.PolyLine(
             route["points"], color="#2563EB", weight=6, opacity=0.9,
             tooltip="Walking", interactive=False,
-        ).add_to(directions)
-    directions.add_child(EventHandler("add", JsCode("""
-        function (event) {
-            const layer = event.target;
-            const map = layer._map;
-            const key = layer.options.fitKey;
-            if (key && key !== map.libraryDirectionsFitKey) {
-                const bounds = layer.getBounds().extend(layer.options.destination);
-                map.fitBounds(bounds, {padding: [35, 35], maxZoom: 16});
-            }
-            map.libraryDirectionsFitKey = key;
-        }
-    """), once=True))
-    return directions
+        ).add_to(library_map)
+        library_map.fit_bounds(bounds, padding=(35, 35), max_zoom=16)
+    elif origin and len(libraries) == 1:
+        library_map.fit_bounds([origin, center], padding=(35, 35), max_zoom=16)
+    return library_map
 
 
-def select_map_library(key, libraries):
-    clicked = st.session_state.get(key) or {}
-    coordinates = clicked.get("last_object_clicked")
-    name = clicked.get("last_object_clicked_tooltip")
-    if coordinates and name:
-        matches = libraries[
-            (libraries["Latitude"] - coordinates["lat"]).abs().lt(0.000001)
-            & (libraries["Longitude"] - coordinates["lng"]).abs().lt(0.000001)
-            & (libraries["Library_Name"].str.strip() == name)
-        ]
-        if not matches.empty:
-            library_id = str(matches.iloc[0]["Library_Serial_Number"])
-            if library_id != st.session_state["selected_library_id"]:
-                clear_route()
-                st.session_state["selected_library_id"] = library_id
-
-
-def show_map(container, libraries, route=None, *, revision=0):
+def show_map(container, libraries, route=None):
     with container:
-        title_column, controls_column = st.columns([3, 1], vertical_alignment="center")
-        title_column.subheader("Library Map")
-        show_subway = controls_column.toggle("Subway", key="show_subway")
+        st.subheader("Library Map")
 
         if libraries.empty:
             st.info("No libraries match the search. Try another name or district.")
 
-        library_map = build_library_map(libraries)
-        directions = build_directions_layer(libraries, route, st.session_state.get("route_origin"))
+        library_map = build_library_map(libraries, route, st.session_state.get("route_origin"))
 
-        subway = folium.FeatureGroup(name="Subway")
-        if show_subway:
-            lines, stations = load_subway_data()
-            folium.GeoJson(
-                lines,
-                style_function=lambda feature: {
-                    "color": SUBWAY_COLORS[feature["properties"]["lineId"]],
-                    "weight": 3,
-                    "opacity": 0.85,
-                    "interactive": False,
-                },
-            ).add_to(subway)
-            station_layer = folium.GeoJson(
-                stations,
-                marker=folium.CircleMarker(
-                    radius=3, color="#334155", weight=1,
-                    fill=True, fill_color="#ffffff", fill_opacity=1,
-                ),
-            ).add_to(subway)
-            station_layer.add_child(EventHandler("add", JsCode("""
-                function (event) {
-                    event.target.eachLayer((layer) => {
-                        const label = document.createElement('span');
-                        const station = layer.feature.properties;
-                        label.textContent = station.name_en || station.name_ko;
-                        layer.bindTooltip(label, {
-                            permanent: true,
-                            direction: 'right',
-                            offset: [5, 0],
-                            className: 'subway-station-label'
-                        });
-                        layer.on('mouseover', () => {
-                            layer.getTooltip().getElement()?.classList.add('station-hovered');
-                        });
-                        layer.on('mouseout', () => {
-                            layer.getTooltip().getElement()?.classList.remove('station-hovered');
-                        });
-                    });
-                }
-            """), once=True))
-
-        key = f"library_map_{revision}"
-        st_folium(
+        result = st_folium(
             library_map,
-            feature_group_to_add=[subway, directions],
             height=500,
             use_container_width=True,
-            returned_objects=["last_object_clicked", "last_object_clicked_tooltip"],
-            key=key,
-            on_change=lambda: select_map_library(key, libraries),
+            returned_objects=["last_object_clicked", "last_object_clicked_count"],
+            key="library_map",
         )
+    return result or {}
 def show_library_information(row, container):
     library = Library.from_row(row)
     with container:

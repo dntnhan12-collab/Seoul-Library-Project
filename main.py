@@ -24,7 +24,8 @@ def main():
     state.setdefault("applied_name", "")
     state.setdefault("applied_district", "All districts")
     state.setdefault("selected_library_id", None)
-    state.setdefault("map_revision", 0)
+    state.setdefault("last_map_click_count", None)
+    state.setdefault("ignore_map_click_once", False)
     state.setdefault("suggestion_selected", False)
 
     districts = sorted(libraries["District_Name"].dropna().unique())
@@ -79,7 +80,31 @@ def main():
     else:
         app.clear_route()
 
-    app.show_map(map_area, shown, route, revision=state["map_revision"])
+    # Focus the route view on its destination; retain search results for browsing.
+    map_libraries = selected_rows if route is not None else shown
+    map_result = app.show_map(map_area, map_libraries, route)
+    clicked_coordinates = map_result.get("last_object_clicked")
+    click_count = map_result.get("last_object_clicked_count")
+    ignore_old_map_click = state["ignore_map_click_once"]
+    state["ignore_map_click_once"] = False
+
+    if (
+        not ignore_old_map_click
+        and click_count is not None
+        and click_count != state["last_map_click_count"]
+    ):
+        state["last_map_click_count"] = click_count
+
+        if clicked_coordinates and not shown.empty:
+            # The user marker must not select a library.
+            clicked_rows = shown[
+                (shown["Latitude"] - clicked_coordinates["lat"]).abs().lt(0.000001)
+                & (shown["Longitude"] - clicked_coordinates["lng"]).abs().lt(0.000001)
+            ]
+            if not clicked_rows.empty:
+                state["selected_library_id"] = str(clicked_rows.iloc[0]["Library_Serial_Number"])
+                app.clear_route()
+                st.rerun()
 
     app.show_district_chart(get_libraries_per_district(libraries))
 

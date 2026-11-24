@@ -45,8 +45,6 @@ The project uses the Seoul Metropolitan Government dataset **Seoul Public Librar
 - `app.py` renders the Streamlit interface, map, library information, summary metrics, and district chart.
 - `services/routing.py` validates coordinates, retrieves walking routes from OSRM, and builds browser links for Naver transit directions.
 - `location_control.py` provides the browser location button. It requests permission only when clicked, then starts walking directions or navigates to Naver with both endpoints.
-- `tests/test_routing.py` checks route response handling, coordinate validation, error messages, and preservation of the starting point in Naver links.
-- `tests/test_library_contracts.py` checks interchangeable data sources and filters, independent data snapshots, and the cleaning/model/search pipeline.
 
 Data flow: injected data source → cleaned DataFrame → `LibraryManager` → `Library` objects → search/filter → map, details, metrics, and chart.
 
@@ -56,11 +54,11 @@ The project demonstrates all five principles through its data-loading and filter
 
 - **Single Responsibility (S):** `data_sources.py` handles data access, `data_manager.py` cleans rows, `analyzer.py` calculates statistics, `search.py` filters libraries, and `app.py` renders the interface.
 - **Open/Closed (O):** A new filter implements `LibraryFilter.matches()` and can be passed to `filter_libraries()` without changing the shared filtering function. A new data source can likewise implement `load()` without changing the cleaning logic.
-- **Liskov Substitution (L):** `CsvLibraryDataSource` and `DataFrameLibraryDataSource` satisfy the same behavioral contract: return independent snapshots with the library CSV columns, support repeated reads, and leave cleaning to the consumer. Either can feed the same cleaning/model/search pipeline. `KeywordFilter` and `DistrictFilter` both accept a `Library`, return a repeatable boolean, and do not mutate the library. Their matching criteria differ, but the consumer's assumptions remain valid. Contract tests exercise both implementations, including empty data and repeated calls.
-- **Interface Segregation (I):** Data cleaning needs only `LibraryDataSource.load()`; filtering needs only `LibraryFilter.matches(library)`. These are separate one-method protocols. A read-only source does not need save/delete/search methods, and a filter does not need data-loading methods. Tests use minimal objects with only the method their consumer requires.
-- **Dependency Inversion (D):** `main(data_source)` and `get_cleaned_library_data(source)` depend on the `LibraryDataSource` abstraction. The executable entry point constructs and injects `CsvLibraryDataSource`; the cleaning service never constructs a CSV reader or knows a file path. Tests inject a DataFrame source or a minimal fake without patching the CSV reader. `filter_libraries()` similarly consumes the `LibraryFilter` abstraction.
+- **Liskov Substitution (L):** `CsvLibraryDataSource` and `DataFrameLibraryDataSource` satisfy the same behavioral contract: return independent snapshots with the library CSV columns, support repeated reads, and leave cleaning to the consumer. Either can feed the same cleaning/model/search pipeline. `KeywordFilter` and `DistrictFilter` both accept a `Library`, return a repeatable boolean, and do not mutate the library. Their matching criteria differ, but the consumer's assumptions remain valid.
+- **Interface Segregation (I):** Data cleaning needs only `LibraryDataSource.load()`; filtering needs only `LibraryFilter.matches(library)`. These are separate one-method protocols. A read-only source does not need save/delete/search methods, and a filter does not need data-loading methods.
+- **Dependency Inversion (D):** `main(data_source)` and `get_cleaned_library_data(source)` depend on the `LibraryDataSource` abstraction. The executable entry point constructs and injects `CsvLibraryDataSource`; the cleaning service never constructs a CSV reader or knows a file path. A DataFrame source can be injected without changing the cleaning service. `filter_libraries()` similarly consumes the `LibraryFilter` abstraction.
 
-These protocols use Python's structural typing: an object with the required method and behavior can be supplied without inheriting from the protocol. Type hints alone do not enforce behavior at runtime; the contract tests verify the shared guarantees.
+These protocols use Python's structural typing: an object with the required method and behavior can be supplied without inheriting from the protocol. Type hints alone do not enforce behavior at runtime; implementations must uphold the documented contracts.
 
 For example, use an existing table through the same processing code:
 
@@ -94,14 +92,6 @@ To refresh your location or recalculate a walking route, press **Find route from
 
 Library details are rendered as escaped text with wrapping to preserve spacing and special characters. Missing spaces in the CSV's affected closed-day descriptions have been corrected.
 
-## Validation
+## Manual validation
 
-Run the data-source/filter contract tests and routing checks without calling external services:
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-```
-
-With Node.js installed, run `node tests/location_control.test.cjs` to check the browser navigation logic using simulated location and popup callbacks.
-
-For a manual check, select a library, choose **Walking**, allow location access, and confirm the route and two markers appear. Then select **Bus / subway (Naver Map)** and press the same button to confirm Naver opens with the starting point and destination. Browser location and navigation require a browser check beyond the automated tests.
+Select a library, choose **Walking**, allow location access, and confirm the route and two markers appear. Then select **Bus / subway (Naver Map)** and press the same button to confirm Naver opens with the starting point and destination.

@@ -38,14 +38,6 @@ def filter_libraries(
         if all(library_filter.matches(library) for library_filter in filters)
     ]
 
-def search_libraries(libraries, keyword):
-    return filter_libraries(libraries, [KeywordFilter(keyword)])
-
-
-def filter_by_district(libraries, district):
-    return filter_libraries(libraries, [DistrictFilter(district)])
-
-
 def find_exact_libraries(df, library_name):
     query = " ".join(str(library_name or "").split()).casefold()
     if not query:

@@ -73,13 +73,10 @@ def walking_route(start, end):
     }
 
 
-def naver_browser_url(library, origin=None):
+def naver_browser_url(library):
     latitude, longitude = coordinates(library.latitude, library.longitude)
     parameters = {
         "elng": longitude, "elat": latitude, "etext": library.name,
         "menu": "route", "pathType": 1,
     }
-    if origin is not None:
-        lat, lon = coordinates(*origin)
-        parameters.update(slat=lat, slng=lon, stext="Starting point")
     return "https://map.naver.com/index.nhn?" + urlencode(parameters, quote_via=quote)

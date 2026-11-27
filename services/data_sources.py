@@ -16,13 +16,3 @@ class CsvLibraryDataSource(LibraryDataSource):
 
     def load(self) -> pd.DataFrame:
         return pd.read_csv(self.path)
-
-
-class DataFrameLibraryDataSource(LibraryDataSource):
-    """Use an existing table, for example in a notebook or an offline test."""
-
-    def __init__(self, data: pd.DataFrame):
-        self._data = data.copy(deep=True)
-
-    def load(self) -> pd.DataFrame:
-        return self._data.copy(deep=True)

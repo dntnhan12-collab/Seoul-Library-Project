@@ -16,8 +16,8 @@ def main(data_source: LibraryDataSource):
 
     try:
         libraries = get_cleaned_library_data(data_source)
-    except FileNotFoundError:
-        st.error("Could not find the library CSV file in the data folder.")
+    except (OSError, ValueError):
+        st.error("Could not load the library data.")
         st.stop()
 
     library_manager = LibraryManager.from_dataframe(libraries)

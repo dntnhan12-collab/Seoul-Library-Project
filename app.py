@@ -7,7 +7,7 @@ import folium
 import streamlit as st
 from streamlit_folium import st_folium
 from models.library import Library
-from services.routing import ROUTE_MODES, RoutingError, coordinates, naver_browser_url, walking_route
+from services.routing import ROUTE_MODES, RoutingError, coordinates, naver_browser_url, walking_router
 from location_control import location_button
 
 def clear_search():
@@ -248,7 +248,7 @@ def show_directions(library):
         try:
             destination = coordinates(library.latitude, library.longitude)
             with st.spinner("Finding your route…"):
-                route = walking_route(origin, destination)
+                route = walking_router.route(origin, destination)
             route.update(request_key=request_key, destination=destination, mode=mode)
             st.session_state["active_route"] = route
         except RoutingError as error:

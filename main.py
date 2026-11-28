@@ -2,7 +2,7 @@ import app
 import streamlit as st
 from models.library_manager import LibraryManager
 from models.library import Library
-from services.analyzer import (get_libraries_per_district, get_total_districts, get_total_libraries,)
+from services.analyzer import LibraryStatistics
 from services.data_manager import get_cleaned_library_data
 from services.contracts import LibraryDataSource
 from services.data_sources import CsvLibraryDataSource
@@ -21,6 +21,7 @@ def main(data_source: LibraryDataSource):
         st.stop()
 
     library_manager = LibraryManager.from_dataframe(libraries)
+    statistics = LibraryStatistics(libraries)
 
     state = st.session_state
     state.setdefault("applied_name", "")
@@ -59,8 +60,8 @@ def main(data_source: LibraryDataSource):
         ]
 
     app.show_summary(
-        get_total_libraries(libraries),
-        get_total_districts(libraries),
+        statistics.total_libraries(),
+        statistics.total_districts(),
         len(shown),
     )
 
@@ -108,7 +109,7 @@ def main(data_source: LibraryDataSource):
                 app.clear_route()
                 st.rerun()
 
-    app.show_district_chart(get_libraries_per_district(libraries))
+    app.show_district_chart(statistics.libraries_per_district())
 
 
 if __name__ == "__main__":

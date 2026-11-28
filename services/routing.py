@@ -10,8 +10,7 @@ from urllib.request import Request, urlopen
 
 
 ROUTE_MODES = {"Walking": "walk", "Bus / subway (Naver Map)": "public"}
-_walking_lock = threading.Lock()
-_last_walking_request = 0.0
+WALKING_ROUTE_URL = "https://routing.openstreetmap.de/routed-foot/route/v1/foot/"
 
 
 class RoutingError(ValueError):
@@ -44,33 +43,50 @@ def _request_json(url, parameters):
         raise RoutingError("The routing service is unavailable. Please try again shortly.") from None
 
 
-def walking_route(start, end):
-    global _last_walking_request
-    start, end = coordinates(*start), coordinates(*end)
-    coordinate_path = f"{start[1]},{start[0]};{end[1]},{end[0]}"
-    # Respect FOSSGIS's maximum of one request per second, across sessions.
-    with _walking_lock:
-        time.sleep(max(0, 1.05 - (time.monotonic() - _last_walking_request)))
-        _last_walking_request = time.monotonic()
-        data = _request_json(
-            "https://routing.openstreetmap.de/routed-foot/route/v1/foot/" + coordinate_path,
-            {"overview": "full", "geometries": "geojson", "steps": "false", "radiuses": "200;200"},
-        )
-    if data.get("code") != "Ok" or not data.get("routes"):
-        raise RoutingError("No walking route was found. Try a starting point closer to a public path.")
-    try:
-        route = data["routes"][0]
-        points = [coordinates(point[1], point[0]) for point in route["geometry"]["coordinates"]]
-        distance, duration = float(route["distance"]), float(route["duration"])
-        if len(points) < 2 or not all(math.isfinite(v) and v >= 0 for v in (distance, duration)):
-            raise ValueError("Invalid route")
-    except (KeyError, IndexError, TypeError, ValueError):
-        raise RoutingError("The service returned an incomplete walking route. Please try again.") from None
-    return {
-        "points": points,
-        "distance": distance,
-        "duration": duration,
-    }
+class WalkingRouter:
+    """Gets walking routes from OSRM, waiting so calls stay one per second."""
+
+    MIN_GAP_SECONDS = 1.05
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._last_request = 0.0
+
+    def route(self, start, end):
+        start, end = coordinates(*start), coordinates(*end)
+        coordinate_path = f"{start[1]},{start[0]};{end[1]},{end[0]}"
+        # Respect FOSSGIS's maximum of one request per second, across sessions.
+        with self._lock:
+            elapsed = time.monotonic() - self._last_request
+            time.sleep(max(0, self.MIN_GAP_SECONDS - elapsed))
+            self._last_request = time.monotonic()
+            data = _request_json(
+                WALKING_ROUTE_URL + coordinate_path,
+                {"overview": "full", "geometries": "geojson", "steps": "false", "radiuses": "200;200"},
+            )
+        return self._read_route(data)
+
+    @staticmethod
+    def _read_route(data):
+        if data.get("code") != "Ok" or not data.get("routes"):
+            raise RoutingError("No walking route was found. Try a starting point closer to a public path.")
+        try:
+            route = data["routes"][0]
+            points = [coordinates(point[1], point[0]) for point in route["geometry"]["coordinates"]]
+            distance, duration = float(route["distance"]), float(route["duration"])
+            if len(points) < 2 or not all(math.isfinite(v) and v >= 0 for v in (distance, duration)):
+                raise ValueError("Invalid route")
+        except (KeyError, IndexError, TypeError, ValueError):
+            raise RoutingError("The service returned an incomplete walking route. Please try again.") from None
+        return {
+            "points": points,
+            "distance": distance,
+            "duration": duration,
+        }
+
+
+# One shared router, so the one-request-per-second limit covers every session.
+walking_router = WalkingRouter()
 
 
 def naver_browser_url(library):

@@ -50,12 +50,11 @@ Data flow: injected data source → cleaned DataFrame → `LibraryManager` → `
 
 ## SOLID principles demonstrated
 
-The project demonstrates four SOLID principles (S, O, I, and D), mainly through its data-loading and filtering boundaries:
+The project demonstrates three SOLID principles (S, O, and I), mainly through its data-loading and filtering boundaries:
 
 - **Single Responsibility (S):** `data_sources.py` handles data access, `data_manager.py` cleans rows, `analyzer.py` calculates statistics, `search.py` filters libraries, and `app.py` renders the interface.
 - **Open/Closed (O):** A new filter implements `LibraryFilter.matches()` and can be passed to `filter_libraries()` without changing the shared filtering function. A new data source can likewise implement `load()` without changing the cleaning logic.
 - **Interface Segregation (I):** Data cleaning needs only `LibraryDataSource.load()`; filtering needs only `LibraryFilter.matches(library)`. These are separate one-method abstract classes. A read-only source does not need save/delete/search methods, and a filter does not need data-loading methods.
-- **Dependency Inversion (D):** `main(data_source)` and `get_cleaned_library_data(source)` depend on the `LibraryDataSource` abstraction. The executable entry point constructs and injects `CsvLibraryDataSource`; the cleaning service never constructs a CSV reader or knows a file path. `filter_libraries()` similarly consumes the `LibraryFilter` abstraction.
 
 Both abstractions use Python's `ABC` and `@abstractmethod`: a subclass that does not define the required method cannot be instantiated.
 
